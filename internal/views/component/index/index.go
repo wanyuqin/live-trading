@@ -1,4 +1,4 @@
-package views
+package index
 
 import (
 	"context"
@@ -41,7 +41,7 @@ func NewModel() *Model {
 }
 
 func (m *Model) Init() tea.Cmd {
-
+	m.startWatchPickStock()
 	// 初始化一些IO
 	//return tea.Batch(tea.EnterAltScreen)
 	return tea.Batch(quoteTick(), tea.EnterAltScreen)
@@ -94,24 +94,6 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	return m, tea.Batch(cmds...)
 }
 
-func (m *Model) updateInput(msg tea.Msg) tea.Cmd {
-	if m.openInput {
-		im, cmd := m.input.Update(msg)
-		m.input = im
-		return cmd
-	}
-
-	return nil
-
-}
-
-func (m *Model) addStockCode(code string) {
-	err := m.stockService.AddPickStockCode(m.ctx, code)
-	if err != nil {
-		fmt.Println(err)
-	}
-}
-
 func (m *Model) View() string {
 	if m.openInput {
 		return appStyle.Render(m.input.View())
@@ -128,4 +110,33 @@ func quoteTick() tea.Cmd {
 	return tea.Tick(3*time.Second, func(t time.Time) tea.Msg {
 		return quoteMsg{}
 	})
+}
+
+func (m *Model) updateInput(msg tea.Msg) tea.Cmd {
+	if m.openInput {
+		im, cmd := m.input.Update(msg)
+		m.input = im
+		return cmd
+	}
+
+	return nil
+
+}
+
+func (m *Model) addStockCode(code string) {
+	err := m.stockService.AddPickStockCode(m.ctx, code)
+	if err != nil {
+		fmt.Println(err)
+	}
+
+	go m.stockService.RestartWatchPickStocks()
+}
+
+func (m *Model) startWatchPickStock() {
+	go func() {
+		err := m.stockService.WatchPickStocks(m.ctx)
+		if err != nil {
+			fmt.Println(err)
+		}
+	}()
 }

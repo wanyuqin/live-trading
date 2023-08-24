@@ -38,27 +38,6 @@ func transformTableRows(pickStocks []entity.PickStock) []table.Row {
 	return rows
 }
 
-func (m *Model) RefreshTable() {
-	pickStocks := entity.GetGlobalPickStock()
-	rows := transformTableRows(pickStocks)
-	t := table.New(
-		table.WithColumns(defaultPickStockTableColumn()),
-		table.WithRows(rows),
-		table.WithHeight(7),
-		table.WithWidth(100),
-	)
-
-	style := defaultTableStyle()
-	if len(rows) > 0 {
-		style.Cell.Align(lipgloss.Center)
-	}
-	t.SetStyles(style)
-	m.Table = t
-
-	return
-
-}
-
 func defaultTableStyle() table.Styles {
 	s := table.DefaultStyles()
 	s.Header = s.Header.

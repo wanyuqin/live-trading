@@ -75,6 +75,7 @@ func (s *Stock) AddPickStockCode(ctx context.Context, code string) error {
 
 func (s *Stock) RestartWatchPickStocks() error {
 	s.stockRepo.StopWatch()
-
+	s.stockRepo.StartWatch()
+	s.WatchPickStocks(context.Background())
 	return nil
 }
