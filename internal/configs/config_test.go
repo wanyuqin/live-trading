@@ -6,7 +6,7 @@ import (
 )
 
 func TestLoadConfig(t *testing.T) {
-	err := LoadConfig()
+	err := LoadConfig("")
 	if err != nil {
 		log.Fatal(err)
 	}

@@ -3,6 +3,7 @@ package configs
 import (
 	"embed"
 	_ "embed"
+	"errors"
 	"github.com/duke-git/lancet/v2/slice"
 	"gopkg.in/yaml.v3"
 	"os"
@@ -21,21 +22,57 @@ var configFile embed.FS
 
 var cfg *ApplicationConfig
 
-var configName = "./internal/configs/trading.yaml"
+var configName = ""
 
-func LoadConfig() error {
-	var ac ApplicationConfig
-	body, err := configFile.ReadFile("trading.yaml")
+func LoadConfig(configPath string) error {
+	if configPath == "" {
+		return errors.New("config path is empty")
+	}
+
+	err := CheckOrCreate(configPath)
 	if err != nil {
 		return err
 	}
+
+	body, err := os.ReadFile(configPath)
+	if err != nil {
+		return err
+	}
+
+	var ac ApplicationConfig
+
 	err = yaml.Unmarshal(body, &ac)
 	if err != nil {
 		return err
 	}
 
 	cfg = &ac
+	configName = configPath
 	return nil
+}
+
+func CheckOrCreate(configPath string) error {
+	_, err := os.Stat(configPath)
+	if os.IsNotExist(err) {
+		createDefaultConfigFile(configPath)
+	}
+	return err
+}
+
+func createDefaultConfigFile(configPath string) error {
+	file, err := os.Create(configPath)
+	defer file.Close()
+	if err != nil {
+		return err
+	}
+	defaultConfig := ApplicationConfig{}
+	body, err := yaml.Marshal(defaultConfig)
+	if err != nil {
+		return err
+	}
+	_, err = file.Write(body)
+	return err
+
 }
 
 func GetConfig() *ApplicationConfig {
@@ -47,6 +84,16 @@ func (config *ApplicationConfig) AddStockCode(code string) error {
 		return nil
 	}
 	config.WatchList.Stock = append(config.WatchList.Stock, code)
+	return config.refreshConfig()
+}
+
+func (config *ApplicationConfig) DeleteStockCode(code string) error {
+	if !slice.Contain(config.WatchList.Stock, code) {
+		return nil
+	}
+	index := slice.IndexOf(config.WatchList.Stock, code)
+
+	config.WatchList.Stock = slice.DeleteAt(config.WatchList.Stock, index)
 	return config.refreshConfig()
 }
 
