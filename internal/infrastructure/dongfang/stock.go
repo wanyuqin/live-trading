@@ -73,21 +73,24 @@ func (d *DongFangStockRepoImpl) WatchPickStock(ctx context.Context, codes entity
 	}
 
 	for {
-		if !d.IsStartWatch() {
+		select {
+		case <-ctx.Done():
 			return nil
-		}
-		body, err := stream.ProcessLine()
-		if err != nil {
-			return err
-		}
-		pickStocks, err := ParseWatchPickStock(body)
-		if err != nil {
-			return err
+		default:
+			body, err := stream.ProcessLine()
+			if err != nil {
+				return err
+			}
+			pickStocks, err := ParseWatchPickStock(body)
+			if err != nil {
+				return err
+			}
+
+			if len(pickStocks) > 0 {
+				rec <- pickStocks
+			}
 		}
 
-		if len(pickStocks) > 0 {
-			rec <- pickStocks
-		}
 	}
 
 }
@@ -108,7 +111,7 @@ func ParseWatchPickStock(data []byte) ([]entity.PickStock, error) {
 			Diff  map[string]struct {
 				F1   int     `json:"f1,omitempty"`
 				F2   int     `json:"f2,omitempty"`
-				F3   int     `json:"f3,omitempty"`
+				F3   int     `json:"f3,omitempty"` // 涨跌幅
 				F4   int     `json:"f4,omitempty"`
 				F5   int     `json:"f5,omitempty"`
 				F6   float64 `json:"f6,omitempty"`
@@ -144,11 +147,12 @@ func ParseWatchPickStock(data []byte) ([]entity.PickStock, error) {
 
 	for _, stock := range r.Data.Diff {
 		ps := entity.PickStock{
-			DataId: r.Svr,
-			Name:   stock.F14,
-			Code:   stock.F12,
-			Now:    xmath.DivideByHundred(stock.F2),
-			Diff:   xmath.DivideByHundred(stock.F4),
+			DataId:        r.Svr,
+			Name:          stock.F14,
+			Code:          stock.F12,
+			Trade:         xmath.DivideByHundred(stock.F2),
+			Diff:          xmath.DivideByHundred(stock.F4),
+			ChangePercent: xmath.DivideByHundred(stock.F3),
 		}
 		pickStocks = append(pickStocks, ps)
 	}

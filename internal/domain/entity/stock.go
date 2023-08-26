@@ -6,11 +6,12 @@ type Stock struct {
 }
 
 type PickStock struct {
-	DataId int64   `json:"data_id"` // 每次的ID是一致的
-	Name   string  `json:"name"`    // f14
-	Code   string  `json:"code"`    // code f12
-	Now    float64 `json:"now"`     // 当前价f2
-	Diff   float64 `json:"diff"`    // 差值 f4
+	DataId        int64   `json:"data_id"`        // 每次的ID是一致的
+	Name          string  `json:"name"`           // f14
+	Code          string  `json:"code"`           // code f12
+	Trade         float64 `json:"trade"`          // 当前价f2
+	Diff          float64 `json:"diff"`           // 差值 f4
+	ChangePercent float64 `json:"change_percent"` // 涨跌幅 //
 }
 
 type StockCode string
@@ -62,8 +63,12 @@ func RefreshGlobalPickStock(picStock []PickStock) {
 
 	for i := range globalPickStock {
 		if newPickStock, ok := m[MapKey(globalPickStock[i].DataId, globalPickStock[i].Code)]; ok {
-			globalPickStock[i].Now = newPickStock.Now
-			globalPickStock[i].Diff = newPickStock.Diff
+			if newPickStock.Trade > 0 {
+				globalPickStock[i].Trade = newPickStock.Trade
+				globalPickStock[i].Diff = newPickStock.Diff
+				globalPickStock[i].ChangePercent = newPickStock.ChangePercent
+			}
+
 		}
 	}
 }

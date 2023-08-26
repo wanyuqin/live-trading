@@ -2,8 +2,7 @@ package stock
 
 import (
 	"github.com/charmbracelet/bubbles/list"
-	"github.com/charmbracelet/bubbles/table"
-	"github.com/charmbracelet/lipgloss"
+	"github.com/evertras/bubble-table/table"
 	"live-trading/internal/domain/entity"
 )
 
@@ -14,13 +13,19 @@ type Model struct {
 }
 
 func NewStockModel() Model {
-	t := table.New(
-		table.WithColumns(defaultPickStockTableColumn()),
-		table.WithRows(initPickStocksTable()),
-		table.WithFocused(true),
-		table.WithHeight(7),
-		table.WithWidth(100))
-	t.SetStyles(defaultTableStyle())
+
+	t := table.New(defaultPickStockTableColumn()).
+		WithRows(initPickStocksTable()).
+		Focused(true).
+		WithKeyMap(initKeyMap()).
+		Filtered(true).
+		Border(table.Border{
+			Left:   "",
+			Right:  "",
+			Top:    "",
+			Bottom: "",
+		})
+
 	return Model{
 		Table: t,
 		Keys:  newTableKeyMap(),
@@ -31,20 +36,7 @@ func NewStockModel() Model {
 func (m *Model) RefreshTable() {
 	pickStocks := entity.GetGlobalPickStock()
 	rows := transformTableRows(pickStocks)
-	t := table.New(
-		table.WithColumns(defaultPickStockTableColumn()),
-		table.WithRows(rows),
-		table.WithHeight(7),
-		table.WithWidth(100),
-	)
-
-	style := defaultTableStyle()
-	if len(rows) > 0 {
-		style.Cell.Align(lipgloss.Center)
-	}
-	t.SetStyles(style)
-	m.Table = t
-
+	m.Table = m.Table.WithRows(rows)
 	return
 
 }

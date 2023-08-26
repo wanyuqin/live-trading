@@ -7,7 +7,7 @@ import (
 )
 
 func TestStartWatchPickStocks(t *testing.T) {
-	err := configs.LoadConfig()
+	err := configs.LoadConfig("")
 	if err != nil {
 		log.Fatal(err)
 	}

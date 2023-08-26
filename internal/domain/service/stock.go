@@ -12,30 +12,44 @@ import (
 )
 
 type IStock interface {
-	WatchPickStocks(ctx context.Context) error
+	WatchPickStocks() error
 	GetPickStocks(ctx context.Context) entity.StockCodes
 	AddPickStockCode(ctx context.Context, code string) error
-	RestartWatchPickStocks() error
+	RestartWatchPickStocks(ctx context.Context) error
+	DeletePickStockCode(code string) error
 }
 
 var stockCodeRegex = regexp.MustCompile("^[0-9a-zA-Z]{6}$")
 
 type Stock struct {
+	ctx       context.Context
+	cancel    context.CancelFunc
 	stockRepo repository.StockRepo
 }
 
 func NewStock() *Stock {
 	return &Stock{
+		ctx:       context.Background(),
 		stockRepo: dongfang.NewDongFangStockRepoImpl(),
 	}
 }
 
-func (s *Stock) WatchPickStocks(ctx context.Context) error {
-	pickStocks := s.GetPickStocks(ctx)
+func NewStockContext(ctx context.Context) *Stock {
+	ctx, cancel := context.WithCancel(ctx)
+	return &Stock{
+		ctx:       ctx,
+		cancel:    cancel,
+		stockRepo: dongfang.NewDongFangStockRepoImpl(),
+	}
+}
+
+func (s *Stock) WatchPickStocks() error {
+
+	pickStocks := s.GetPickStocks(s.ctx)
 	entity.NewGlobalPickStock()
 	rec := make(chan []entity.PickStock, 100)
 	go func() {
-		err := s.stockRepo.WatchPickStock(ctx, pickStocks, rec)
+		err := s.stockRepo.WatchPickStock(s.ctx, pickStocks, rec)
 		if err != nil {
 			fmt.Println(err)
 			return
@@ -73,9 +87,14 @@ func (s *Stock) AddPickStockCode(ctx context.Context, code string) error {
 	return nil
 }
 
-func (s *Stock) RestartWatchPickStocks() error {
-	s.stockRepo.StopWatch()
-	s.stockRepo.StartWatch()
-	s.WatchPickStocks(context.Background())
+func (s *Stock) RestartWatchPickStocks(ctx context.Context) error {
+	s.cancel()
+	s.ctx, s.cancel = context.WithCancel(ctx)
+	s.WatchPickStocks()
 	return nil
+}
+
+func (s *Stock) DeletePickStockCode(code string) error {
+	return configs.GetConfig().DeleteStockCode(code)
+
 }

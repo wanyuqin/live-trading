@@ -24,6 +24,7 @@ type quoteMsg struct {
 
 type Model struct {
 	ctx          context.Context
+	cancel       context.CancelCauseFunc
 	openInput    bool
 	stock        stock.Model
 	input        textinput.Model
@@ -31,12 +32,16 @@ type Model struct {
 }
 
 func NewModel() *Model {
+	//ctx, cancel := context.WithCancelCause(context.Background())
+	ctx := context.Background()
+	stockService := service.NewStockContext(ctx)
 	input := textinput.New()
 	input.Cursor.Style = focusedStyle.Copy()
 	return &Model{
 		stock:        stock.NewStockModel(),
 		input:        input,
-		stockService: service.NewStock(),
+		stockService: stockService,
+		ctx:          ctx,
 	}
 }
 
@@ -49,7 +54,6 @@ func (m *Model) Init() tea.Cmd {
 
 func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	var cmds []tea.Cmd
-
 	if m.openInput {
 		switch msg := msg.(type) {
 		case tea.KeyMsg:
@@ -59,20 +63,31 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				m.addStockCode(code)
 				m.input = textinput.New()
 				m.openInput = false
+			case "esc":
+				m.input = textinput.New()
+				m.openInput = false
 			}
-
 		}
 
 		cmd := m.updateInput(msg)
 		cmds = append(cmds, cmd)
 		return m, tea.Batch(cmds...)
 	}
-
 	switch msg := msg.(type) {
+	case tea.WindowSizeMsg:
+		width, height := appStyle.GetFrameSize()
+		windowWidth = width
+		windowHeight = height
+		m.stock.Table.WithMaxTotalWidth(width)
 	case tea.KeyMsg:
+		switch msg.String() {
+		case "x":
+			m.deleteStockCode()
+		case "ctrl+c":
+			cmds = append(cmds, tea.Quit)
+		}
 		switch {
 		case key.Matches(msg, m.stock.Keys.InsertItem):
-			//m.stock.DelegateKeys.Remove.SetEnabled(true)
 			m.input.Placeholder = "please input stock code"
 			m.input.Focus()
 			m.input.PromptStyle = focusedStyle
@@ -85,31 +100,22 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case quoteMsg:
 		// 定期获取
 		m.stock.RefreshTable()
-		newTable, cmd := m.stock.Table.Update(msg)
-		cmds = append(cmds, cmd)
-		m.stock.Table = newTable
 	}
-
+	newTable, cmd := m.stock.Table.Update(msg)
+	m.stock.Table = newTable
+	cmds = append(cmds, cmd)
 	cmds = append(cmds, quoteTick())
+
 	return m, tea.Batch(cmds...)
 }
 
 func (m *Model) View() string {
+	now := getTime()
 	if m.openInput {
-		return appStyle.Render(m.input.View())
+		return now + "\n" + appStyle.Render(m.input.View())
 	}
-	return appStyle.Render(m.stock.Table.View())
-}
 
-func getTime() string {
-	t := time.Now()
-	return fmt.Sprintf("%s %02d:%02d:%02d", t.Weekday().String(), t.Hour(), t.Minute(), t.Second())
-}
-
-func quoteTick() tea.Cmd {
-	return tea.Tick(3*time.Second, func(t time.Time) tea.Msg {
-		return quoteMsg{}
-	})
+	return now + "\n" + lipgloss.NewStyle().MarginLeft(1).Render(m.stock.Table.View())
 }
 
 func (m *Model) updateInput(msg tea.Msg) tea.Cmd {
@@ -123,20 +129,22 @@ func (m *Model) updateInput(msg tea.Msg) tea.Cmd {
 
 }
 
-func (m *Model) addStockCode(code string) {
-	err := m.stockService.AddPickStockCode(m.ctx, code)
-	if err != nil {
-		fmt.Println(err)
-	}
-
-	go m.stockService.RestartWatchPickStocks()
-}
-
 func (m *Model) startWatchPickStock() {
 	go func() {
-		err := m.stockService.WatchPickStocks(m.ctx)
+		err := m.stockService.WatchPickStocks()
 		if err != nil {
 			fmt.Println(err)
 		}
 	}()
+}
+
+func getTime() string {
+	t := time.Now()
+	return fmt.Sprintf("%d-%02d-%02d %s  %02d:%02d:%02d", t.Year(), t.Month(), t.Day(), t.Weekday().String(), t.Hour(), t.Minute(), t.Second())
+}
+
+func quoteTick() tea.Cmd {
+	return tea.Tick(1*time.Second, func(t time.Time) tea.Msg {
+		return quoteMsg{}
+	})
 }

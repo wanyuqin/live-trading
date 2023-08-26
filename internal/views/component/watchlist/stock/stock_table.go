@@ -2,17 +2,37 @@ package stock
 
 import (
 	"fmt"
-	"github.com/charmbracelet/bubbles/table"
 	"github.com/charmbracelet/lipgloss"
+	"github.com/evertras/bubble-table/table"
 	"live-trading/internal/domain/entity"
+)
+
+const (
+	defaultTableHeight = 10
+	defaultTableWidth  = 100
+)
+
+const (
+	columnKeyCode          = "code"
+	columnKeyName          = "name"
+	columnKeyNow           = "trade"
+	columnKeyDiff          = "diff"
+	columnKeyChangePercent = "changePercent"
+
+	colorNormal   = "#fa0"
+	colorFire     = "#f64"
+	colorElectric = "#ff0"
+	colorWater    = "#44f"
+	colorPlant    = "#8b8"
 )
 
 func defaultPickStockTableColumn() []table.Column {
 	columns := []table.Column{
-		{Title: "代码", Width: 10},
-		{Title: "名称", Width: 10},
-		{Title: "最新价", Width: 10},
-		{Title: "涨跌额", Width: 10},
+		table.NewColumn(columnKeyCode, "代码", 10).WithFiltered(true),
+		table.NewColumn(columnKeyName, "名称", 10),
+		table.NewColumn(columnKeyNow, "最新价", 10),
+		table.NewColumn(columnKeyDiff, "涨跌额", 10),
+		table.NewColumn(columnKeyChangePercent, "涨跌幅", 10),
 	}
 	return columns
 }
@@ -26,28 +46,52 @@ func transformTableRows(pickStocks []entity.PickStock) []table.Row {
 	rows := make([]table.Row, 0, len(pickStocks))
 	for i := range pickStocks {
 		pickStock := pickStocks[i]
-		row := table.Row{
-			pickStock.Code,
-			pickStock.Name,
-			fmt.Sprintf("%.2f", pickStock.Now),
-			fmt.Sprintf("%.2f", pickStock.Diff),
-		}
+		row := makeRow(pickStock.Code, pickStock.Name, pickStock.Trade, pickStock.Diff, pickStock.ChangePercent)
 		rows = append(rows, row)
 	}
 
 	return rows
 }
 
-func defaultTableStyle() table.Styles {
-	s := table.DefaultStyles()
-	s.Header = s.Header.
-		BorderForeground(lipgloss.Color("240")).
-		BorderBottom(true).
-		Bold(false).
-		Align(lipgloss.Center)
-	s.Selected = s.Selected.
-		Foreground(lipgloss.Color("229")).
-		Bold(false)
+func makeRow(code string, name string, trade float64, diff float64, changePercent float64) table.Row {
+	var (
+		tradeColumn         interface{} = trade
+		diffColumn          interface{} = diff
+		changePercentColumn interface{} = changePercent
+	)
 
-	return s
+	if diff < 0 {
+		diffColumn = table.NewStyledCell(fmt.Sprintf("%.2f", diff), lipgloss.NewStyle().Foreground(lipgloss.Color(colorWater)))
+		tradeColumn = table.NewStyledCell(fmt.Sprintf("%.2f", trade), lipgloss.NewStyle().Foreground(lipgloss.Color(colorWater)))
+		changePercentColumn = table.NewStyledCell(fmt.Sprintf("%.2f%s", changePercent, "%"), lipgloss.NewStyle().Foreground(lipgloss.Color(colorWater)))
+	}
+
+	if diff > 0 {
+		diffColumn = table.NewStyledCell(fmt.Sprintf("%.2f", diff), lipgloss.NewStyle().Foreground(lipgloss.Color(colorFire)))
+		tradeColumn = table.NewStyledCell(fmt.Sprintf("%.2f", trade), lipgloss.NewStyle().Foreground(lipgloss.Color(colorFire)))
+		changePercentColumn = table.NewStyledCell(fmt.Sprintf("%.2f%s", changePercent, "%"), lipgloss.NewStyle().Foreground(lipgloss.Color(colorFire)))
+
+	}
+
+	return table.NewRow(table.RowData{
+		columnKeyCode:          code,
+		columnKeyName:          name,
+		columnKeyNow:           tradeColumn,
+		columnKeyDiff:          diffColumn,
+		columnKeyChangePercent: changePercentColumn,
+	})
+}
+
+func initKeyMap() table.KeyMap {
+	keys := table.DefaultKeyMap()
+	return keys
+}
+
+func (m *Model) GetRowCode(index int) string {
+	rows := m.Table.GetVisibleRows()
+	if code, ok := rows[index].Data[columnKeyCode].(string); ok {
+		return code
+	}
+
+	return ""
 }
