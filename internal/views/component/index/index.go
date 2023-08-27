@@ -8,7 +8,9 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 	"live-trading/internal/domain/service"
+	"live-trading/internal/views/component/market"
 	"live-trading/internal/views/component/watchlist/stock"
+	"strings"
 	"time"
 )
 
@@ -23,30 +25,36 @@ type quoteMsg struct {
 }
 
 type Model struct {
-	ctx          context.Context
-	cancel       context.CancelCauseFunc
-	openInput    bool
-	stock        stock.Model
-	input        textinput.Model
-	stockService service.IStock
+	ctx           context.Context
+	cancel        context.CancelCauseFunc
+	openInput     bool
+	stock         stock.Model
+	market        market.Model
+	input         textinput.Model
+	stockService  service.IStock
+	marketService service.IMarket
 }
 
 func NewModel() *Model {
 	//ctx, cancel := context.WithCancelCause(context.Background())
 	ctx := context.Background()
-	stockService := service.NewStockContext(ctx)
+	stockService := service.NewStockWithContext(ctx)
+	marketService := service.NewMarketWithContext(ctx)
 	input := textinput.New()
 	input.Cursor.Style = focusedStyle.Copy()
 	return &Model{
-		stock:        stock.NewStockModel(),
-		input:        input,
-		stockService: stockService,
-		ctx:          ctx,
+		stock:         stock.NewStockModel(),
+		market:        market.NewModel(),
+		input:         input,
+		stockService:  stockService,
+		marketService: marketService,
+		ctx:           ctx,
 	}
 }
 
 func (m *Model) Init() tea.Cmd {
 	m.startWatchPickStock()
+	m.startWatchMarketStock()
 	// 初始化一些IO
 	//return tea.Batch(tea.EnterAltScreen)
 	return tea.Batch(quoteTick(), tea.EnterAltScreen)
@@ -100,6 +108,8 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case quoteMsg:
 		// 定期获取
 		m.stock.RefreshTable()
+		m.market.RefreshTable()
+
 	}
 	newTable, cmd := m.stock.Table.Update(msg)
 	m.stock.Table = newTable
@@ -110,12 +120,18 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 }
 
 func (m *Model) View() string {
+	doc := strings.Builder{}
 	now := getTime()
+	doc.WriteString(now + "\n\n")
+	doc.WriteString(m.market.View() + "\n\n")
+
 	if m.openInput {
-		return now + "\n" + appStyle.Render(m.input.View())
+		doc.WriteString(appStyle.Render(m.input.View()))
+		return doc.String()
 	}
 
-	return now + "\n" + lipgloss.NewStyle().MarginLeft(1).Render(m.stock.Table.View())
+	doc.WriteString(lipgloss.NewStyle().MarginLeft(1).Render(m.stock.Table.View()))
+	return doc.String()
 }
 
 func (m *Model) updateInput(msg tea.Msg) tea.Cmd {
@@ -132,6 +148,15 @@ func (m *Model) updateInput(msg tea.Msg) tea.Cmd {
 func (m *Model) startWatchPickStock() {
 	go func() {
 		err := m.stockService.WatchPickStocks()
+		if err != nil {
+			fmt.Println(err)
+		}
+	}()
+}
+
+func (m *Model) startWatchMarketStock() {
+	go func() {
+		err := m.marketService.WatchMarket()
 		if err != nil {
 			fmt.Println(err)
 		}

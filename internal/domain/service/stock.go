@@ -34,7 +34,7 @@ func NewStock() *Stock {
 	}
 }
 
-func NewStockContext(ctx context.Context) *Stock {
+func NewStockWithContext(ctx context.Context) *Stock {
 	ctx, cancel := context.WithCancel(ctx)
 	return &Stock{
 		ctx:       ctx,
@@ -44,9 +44,7 @@ func NewStockContext(ctx context.Context) *Stock {
 }
 
 func (s *Stock) WatchPickStocks() error {
-
 	pickStocks := s.GetPickStocks(s.ctx)
-	entity.NewGlobalPickStock()
 	rec := make(chan []entity.PickStock, 100)
 	go func() {
 		err := s.stockRepo.WatchPickStock(s.ctx, pickStocks, rec)

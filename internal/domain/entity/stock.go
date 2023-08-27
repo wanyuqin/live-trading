@@ -14,6 +14,12 @@ type PickStock struct {
 	ChangePercent float64 `json:"change_percent"` // 涨跌幅 //
 }
 
+var MarketCode = []StockCode{
+	"000001", // 上证指数
+	"399001", // 深圳成指
+	"399006", // 创业板指
+}
+
 type StockCode string
 
 type StockCodes []StockCode
@@ -34,19 +40,42 @@ func (s StockCodes) GetRequestCode() {
 func (s StockCodes) RequestCodes() []string {
 	codes := make([]string, 0, len(s))
 	for i := range s {
-		codes = append(codes, fmt.Sprintf("0.%s", s[i].String()))
+		codes = append(codes, s[i].RequestCode())
+
 	}
 	return codes
+}
+
+func (s StockCode) RequestCode() string {
+	if s == "000001" {
+		return fmt.Sprintf("1.%s", s.String())
+	}
+	first := s[:1]
+	if first == "6" || first == "5" {
+		return fmt.Sprintf("1.%s", s.String())
+	}
+
+	if first == "3" || first == "0" || first == "1" {
+		return fmt.Sprintf("0.%s", s.String())
+	}
+	return ""
 }
 
 func (s StockCode) String() string {
 	return string(s)
 }
 
-var globalPickStock []PickStock
+var (
+	globalPickStock   = make([]PickStock, 0)
+	globalMarketStock = make([]PickStock, 0)
+)
 
 func GetGlobalPickStock() []PickStock {
 	return globalPickStock
+}
+
+func GetGlobalMarketStock() []PickStock {
+	return globalMarketStock
 }
 
 func NewGlobalPickStock() {
@@ -55,22 +84,49 @@ func NewGlobalPickStock() {
 }
 
 func RefreshGlobalPickStock(picStock []PickStock) {
-	if len(globalPickStock) == 0 {
-		globalPickStock = picStock
+	//if len(globalPickStock) == 0 {
+	//	globalPickStock = picStock
+	//	return
+	//}
+	//m := PickStockMap(picStock)
+	//
+	//for i := range globalPickStock {
+	//	if newPickStock, ok := m[MapKey(globalPickStock[i].DataId, globalPickStock[i].Code)]; ok {
+	//		if newPickStock.Trade > 0 {
+	//			globalPickStock[i].Trade = newPickStock.Trade
+	//			globalPickStock[i].Diff = newPickStock.Diff
+	//			globalPickStock[i].ChangePercent = newPickStock.ChangePercent
+	//		}
+	//
+	//	}
+	//}
+	refreshGlobalStock(picStock, &globalPickStock)
+}
+
+func RefreshGlobalMarketStock(picStock []PickStock) {
+	refreshGlobalStock(picStock, &globalMarketStock)
+}
+
+func refreshGlobalStock(newStock []PickStock, globalStocks *[]PickStock) {
+	if len(*globalStocks) == 0 {
+		*globalStocks = newStock
 		return
 	}
-	m := PickStockMap(picStock)
+	m := PickStockMap(newStock)
+	copyStocks := *globalStocks
+	for i := range copyStocks {
 
-	for i := range globalPickStock {
-		if newPickStock, ok := m[MapKey(globalPickStock[i].DataId, globalPickStock[i].Code)]; ok {
+		if newPickStock, ok := m[MapKey(copyStocks[i].DataId, copyStocks[i].Code)]; ok {
 			if newPickStock.Trade > 0 {
-				globalPickStock[i].Trade = newPickStock.Trade
-				globalPickStock[i].Diff = newPickStock.Diff
-				globalPickStock[i].ChangePercent = newPickStock.ChangePercent
+				copyStocks[i].Trade = newPickStock.Trade
+				copyStocks[i].Diff = newPickStock.Diff
+				copyStocks[i].ChangePercent = newPickStock.ChangePercent
 			}
 
 		}
 	}
+
+	*globalStocks = copyStocks
 }
 
 func PickStockMap(pickStocks []PickStock) map[string]PickStock {

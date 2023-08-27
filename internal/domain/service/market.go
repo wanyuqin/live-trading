@@ -9,24 +9,45 @@ import (
 )
 
 type IMarket interface {
-	ListMarket(ctx context.Context) (entity.Markets, error)
+	WatchMarket() error
 }
 
 type Market struct {
+	ctx        context.Context
+	cancel     context.CancelFunc
 	marketRepo repository.MarketRepo
 }
 
 func NewMarket() *Market {
+
 	return &Market{
+		ctx:        context.Background(),
 		marketRepo: dongfang.NewDongFangMarketRepoImpl(),
 	}
 }
 
-func (m Market) ListMarket(ctx context.Context) (entity.Markets, error) {
-	res := make(chan []byte)
-	go m.marketRepo.ListMarket(res)
-	for re := range res {
-		fmt.Println(re)
+func NewMarketWithContext(ctx context.Context) *Market {
+	market := &Market{
+		marketRepo: dongfang.NewDongFangMarketRepoImpl(),
 	}
-	return nil, nil
+	market.ctx, market.cancel = context.WithCancel(ctx)
+	return market
+}
+
+func (m *Market) WatchMarket() error {
+	rec := make(chan []entity.PickStock, 100)
+	go func() {
+		err := m.marketRepo.WatchMarket(m.ctx, entity.MarketCode, rec)
+		if err != nil {
+			fmt.Println(err)
+			return
+		}
+	}()
+
+	for stocks := range rec {
+		copyStocks := stocks
+		entity.RefreshGlobalMarketStock(copyStocks)
+	}
+
+	return nil
 }

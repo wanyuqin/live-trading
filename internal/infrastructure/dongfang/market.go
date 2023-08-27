@@ -2,15 +2,14 @@ package dongfang
 
 import (
 	"context"
-	"fmt"
+	"live-trading/internal/domain/entity"
 	"live-trading/internal/domain/repository"
 	"live-trading/internal/infrastructure/client"
-	"sync"
 )
 
 var (
 	// 上证指数
-	szzs = "http://23.push2.eastmoney.com/api/qt/stock/sse?fields=f58,f43,f169,f170&secid=1.000001"
+	szzs = "http://23.push2.eastmoney.com/api/qt/stock/sse?fields=f58,f43,f169,f170&secid=1.000001,0.399001,0.399006"
 	// 深证成指
 	sczs = "http://76.push2.eastmoney.com/api/qt/stock/sse?fields=f58,f43,f169,f170&secid=0.399001"
 	//
@@ -28,73 +27,41 @@ func NewDongFangMarketRepoImpl() *DongFangMarketRepoImpl {
 type MarketResponse struct {
 }
 
-// ListMarket TODO 重构
-func (d DongFangMarketRepoImpl) ListMarket(res chan<- []byte) {
-	wg := &sync.WaitGroup{}
-	wg.Add(3)
+func (d *DongFangMarketRepoImpl) WatchMarket(ctx context.Context, codes entity.StockCodes, rec chan<- []entity.PickStock) error {
 	c := client.NewClient()
-	go func() {
-		defer wg.Done()
-		request, err := c.NewRequest(context.Background(), "GET", szzs)
-		if err != nil {
-			fmt.Println(err)
+	u, err := GetStockUrl(codes.RequestCodes())
+	defer close(rec)
+	if err != nil {
+		return err
+	}
+	request, err := c.NewRequest(context.Background(), "GET", u)
+	if err != nil {
+		return err
+	}
 
-		}
-		stream, err := c.SendRequestStream(request)
-		if err != nil {
-			fmt.Println(err)
-		}
+	stream, err := c.SendRequestStream(request)
+	if err != nil {
+		return err
+	}
 
-		for {
+	for {
+		select {
+		case <-ctx.Done():
+			return nil
+		default:
 			body, err := stream.ProcessLine()
 			if err != nil {
-				fmt.Println(err)
+				return err
 			}
-			res <- body
-
-		}
-	}()
-
-	go func() {
-		defer wg.Done()
-		request, err := c.NewRequest(context.Background(), "GET", sczs)
-		if err != nil {
-			fmt.Println(err)
-
-		}
-		stream, err := c.SendRequestStream(request)
-		if err != nil {
-			fmt.Println(err)
-		}
-
-		for {
-			body, err := stream.ProcessLine()
+			pickStocks, err := ParseWatchPickStock(body)
 			if err != nil {
-				fmt.Println(err)
+				return err
 			}
-			res <- body
 
-		}
-	}()
-
-	go func() {
-		defer wg.Done()
-		request, err := c.NewRequest(context.Background(), "GET", cybz)
-		if err != nil {
-			fmt.Println(err)
-		}
-		stream, err := c.SendRequestStream(request)
-		if err != nil {
-			fmt.Println(err)
-		}
-		for {
-			body, err := stream.ProcessLine()
-			if err != nil {
-				fmt.Println(err)
+			if len(pickStocks) > 0 {
+				rec <- pickStocks
 			}
-			res <- body
 		}
-	}()
-	wg.Wait()
 
+	}
 }

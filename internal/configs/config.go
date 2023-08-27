@@ -14,7 +14,8 @@ type ApplicationConfig struct {
 }
 
 type WatchList struct {
-	Stock []string `json:"stock" yaml:"stock"`
+	Stock       []string `json:"stock" yaml:"stock"`
+	MarketStock []string `json:"market_stock"`
 }
 
 //go:embed trading.yaml

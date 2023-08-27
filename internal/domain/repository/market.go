@@ -1,5 +1,10 @@
 package repository
 
+import (
+	"context"
+	"live-trading/internal/domain/entity"
+)
+
 type MarketRepo interface {
-	ListMarket(res chan<- []byte)
+	WatchMarket(ctx context.Context, code entity.StockCodes, res chan<- []entity.PickStock) error
 }

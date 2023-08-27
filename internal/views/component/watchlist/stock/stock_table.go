@@ -63,7 +63,7 @@ func makeRow(code string, name string, trade float64, diff float64, changePercen
 	if diff < 0 {
 		diffColumn = table.NewStyledCell(fmt.Sprintf("%.2f", diff), lipgloss.NewStyle().Foreground(lipgloss.Color(colorWater)))
 		tradeColumn = table.NewStyledCell(fmt.Sprintf("%.2f", trade), lipgloss.NewStyle().Foreground(lipgloss.Color(colorWater)))
-		changePercentColumn = table.NewStyledCell(fmt.Sprintf("%.2f%s", changePercent, "%"), lipgloss.NewStyle().Foreground(lipgloss.Color(colorWater)))
+		changePercentColumn = table.NewStyledCell(fmt.Sprintf("%.2f%%", changePercent), lipgloss.NewStyle().Foreground(lipgloss.Color(colorWater)))
 	}
 
 	if diff > 0 {
