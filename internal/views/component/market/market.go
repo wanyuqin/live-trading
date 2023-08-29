@@ -42,7 +42,7 @@ var (
 const (
 	columnWidth = 30
 	colorGreen  = "#5cb300"
-	colorRed    = "#b30030"
+	colorRed    = "#f64"
 )
 
 func NewModel() Model {
@@ -54,19 +54,19 @@ func GetMarket() string {
 		listStyle.Copy().Render(
 			lipgloss.JoinVertical(lipgloss.Left,
 				listHeader("上证指数"),
-				listItem("3064")),
+				listItem("")),
 		),
 
 		listStyle.Copy().Render(
 			lipgloss.JoinVertical(lipgloss.Left,
 				listHeader("深证成指"),
-				listItem("3064")),
+				listItem("")),
 		),
 
 		listStyle.Copy().Render(
 			lipgloss.JoinVertical(lipgloss.Left,
 				listHeader("创业板指"),
-				listItem("3064")),
+				listItem("")),
 		),
 	)
 	return lipgloss.JoinHorizontal(lipgloss.Top, lists)
@@ -86,7 +86,7 @@ func transformMarket(markets []entity.PickStock) string {
 	marketRenders := make([]string, 0, len(markets))
 	for i := range markets {
 		market := markets[i]
-		changePercent := upStyle.Render(fmt.Sprintf("%.2f", market.ChangePercent))
+		changePercent := upStyle.Render(fmt.Sprintf("%.2f%%", market.ChangePercent))
 		trade := upStyle.Render(fmt.Sprintf("%.2f", market.Trade))
 		if market.ChangePercent < 0 {
 			changePercent = downStyle.Render(fmt.Sprintf("%.2f%%", market.ChangePercent))

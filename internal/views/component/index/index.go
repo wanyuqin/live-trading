@@ -131,6 +131,8 @@ func (m *Model) View() string {
 	}
 
 	doc.WriteString(lipgloss.NewStyle().MarginLeft(1).Render(m.stock.Table.View()))
+	doc.WriteString("\n\n\n\n")
+	doc.WriteString(m.stock.Keys.View())
 	return doc.String()
 }
 

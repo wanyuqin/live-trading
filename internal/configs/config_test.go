@@ -18,7 +18,7 @@ func TestApplicationConfig_RefreshConfig(t *testing.T) {
 			Stock: []string{"000217", "000312"},
 		},
 	}
-	err := config.RefreshConfig()
+	err := config.refreshConfig()
 	if err != nil {
 		log.Fatal(err)
 		return

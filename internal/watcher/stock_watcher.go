@@ -21,12 +21,12 @@ func NewStockWatcher(ctx context.Context, codes []string) *StockWatcher {
 }
 
 func (watcher *StockWatcher) Start() error {
-	err := watcher.StockService.WatchPickStocks(watcher.Ctx)
+	err := watcher.StockService.WatchPickStocks()
 	return err
 }
 
 func (watcher *StockWatcher) Reload() {
-	watcher.StockService.RestartWatchPickStocks()
+	watcher.StockService.RestartWatchPickStocks(context.Background())
 }
 
 func (watcher *StockWatcher) Stop() {

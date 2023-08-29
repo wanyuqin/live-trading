@@ -4,7 +4,7 @@
 ## TODO
 
 
-* [ ] Delete pick stock code
+* [X] Delete pick stock code
 * [X] market
 * [ ] error handle
 * [ ] Delete and add stock refresh smooth

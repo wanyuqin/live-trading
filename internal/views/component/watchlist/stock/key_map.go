@@ -1,6 +1,9 @@
 package stock
 
-import "github.com/charmbracelet/bubbles/key"
+import (
+	"github.com/charmbracelet/bubbles/key"
+	"github.com/charmbracelet/lipgloss"
+)
 
 type tableKeyMap struct {
 	ToggleSpinner    key.Binding
@@ -11,31 +14,23 @@ type tableKeyMap struct {
 	InsertItem       key.Binding
 }
 
+var (
+	descStyle = lipgloss.NewStyle().Foreground(lipgloss.AdaptiveColor{
+		Light: "#B2B2B2",
+		Dark:  "#4A4A4A",
+	})
+)
+
+func (t *tableKeyMap) View() string {
+	help := "[a] add item [x] delete item"
+	return descStyle.Render(help)
+}
+
 func newTableKeyMap() *tableKeyMap {
 	return &tableKeyMap{
 		InsertItem: key.NewBinding(
 			key.WithKeys("a"),
 			key.WithHelp("a", "add item"),
-		),
-		ToggleSpinner: key.NewBinding(
-			key.WithKeys("s"),
-			key.WithHelp("s", "toggle spinner"),
-		),
-		ToggleTitleBar: key.NewBinding(
-			key.WithKeys("T"),
-			key.WithHelp("T", "toggle title"),
-		),
-		ToggleStatusBar: key.NewBinding(
-			key.WithKeys("S"),
-			key.WithHelp("S", "toggle status"),
-		),
-		TogglePagination: key.NewBinding(
-			key.WithKeys("P"),
-			key.WithHelp("P", "toggle pagination"),
-		),
-		ToggleHelpMenu: key.NewBinding(
-			key.WithKeys("H"),
-			key.WithHelp("H", "toggle help"),
 		),
 	}
 }

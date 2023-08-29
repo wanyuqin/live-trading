@@ -45,6 +45,9 @@ func NewStockWithContext(ctx context.Context) *Stock {
 
 func (s *Stock) WatchPickStocks() error {
 	pickStocks := s.GetPickStocks(s.ctx)
+	if len(pickStocks) == 0 {
+		return nil
+	}
 	rec := make(chan []entity.PickStock, 100)
 	go func() {
 		err := s.stockRepo.WatchPickStock(s.ctx, pickStocks, rec)
@@ -87,6 +90,7 @@ func (s *Stock) AddPickStockCode(ctx context.Context, code string) error {
 
 func (s *Stock) RestartWatchPickStocks(ctx context.Context) error {
 	s.cancel()
+	entity.ClearGlobalPickStock()
 	s.ctx, s.cancel = context.WithCancel(ctx)
 	s.WatchPickStocks()
 	return nil

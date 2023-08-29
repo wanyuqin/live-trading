@@ -14,8 +14,7 @@ type ApplicationConfig struct {
 }
 
 type WatchList struct {
-	Stock       []string `json:"stock" yaml:"stock"`
-	MarketStock []string `json:"market_stock"`
+	Stock []string `json:"stock" yaml:"stock"`
 }
 
 //go:embed trading.yaml
@@ -48,6 +47,7 @@ func LoadConfig(configPath string) error {
 	}
 
 	cfg = &ac
+	cfg.UniqueWatchStock()
 	configName = configPath
 	return nil
 }
@@ -55,7 +55,10 @@ func LoadConfig(configPath string) error {
 func CheckOrCreate(configPath string) error {
 	_, err := os.Stat(configPath)
 	if os.IsNotExist(err) {
-		createDefaultConfigFile(configPath)
+		err = createDefaultConfigFile(configPath)
+		if err != nil {
+			return err
+		}
 	}
 	return err
 }
@@ -98,8 +101,12 @@ func (config *ApplicationConfig) DeleteStockCode(code string) error {
 	return config.refreshConfig()
 }
 
+func (config *ApplicationConfig) UniqueWatchStock() {
+	config.WatchList.Stock = slice.Unique(config.WatchList.Stock)
+}
+
 func (config *ApplicationConfig) refreshConfig() error {
-	file, err := os.OpenFile(configName, os.O_CREATE|os.O_RDWR, 0666)
+	file, err := os.OpenFile(configName, os.O_CREATE|os.O_RDWR|os.O_TRUNC, 0666)
 	defer file.Close()
 
 	if err != nil {

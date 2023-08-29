@@ -74,6 +74,10 @@ func GetGlobalPickStock() []PickStock {
 	return globalPickStock
 }
 
+func ClearGlobalPickStock() {
+	globalPickStock = make([]PickStock, 0)
+}
+
 func GetGlobalMarketStock() []PickStock {
 	return globalMarketStock
 }
@@ -84,22 +88,6 @@ func NewGlobalPickStock() {
 }
 
 func RefreshGlobalPickStock(picStock []PickStock) {
-	//if len(globalPickStock) == 0 {
-	//	globalPickStock = picStock
-	//	return
-	//}
-	//m := PickStockMap(picStock)
-	//
-	//for i := range globalPickStock {
-	//	if newPickStock, ok := m[MapKey(globalPickStock[i].DataId, globalPickStock[i].Code)]; ok {
-	//		if newPickStock.Trade > 0 {
-	//			globalPickStock[i].Trade = newPickStock.Trade
-	//			globalPickStock[i].Diff = newPickStock.Diff
-	//			globalPickStock[i].ChangePercent = newPickStock.ChangePercent
-	//		}
-	//
-	//	}
-	//}
 	refreshGlobalStock(picStock, &globalPickStock)
 }
 
@@ -115,12 +103,13 @@ func refreshGlobalStock(newStock []PickStock, globalStocks *[]PickStock) {
 	m := PickStockMap(newStock)
 	copyStocks := *globalStocks
 	for i := range copyStocks {
-
 		if newPickStock, ok := m[MapKey(copyStocks[i].DataId, copyStocks[i].Code)]; ok {
 			if newPickStock.Trade > 0 {
 				copyStocks[i].Trade = newPickStock.Trade
 				copyStocks[i].Diff = newPickStock.Diff
-				copyStocks[i].ChangePercent = newPickStock.ChangePercent
+				if newPickStock.Diff != 0 && newPickStock.ChangePercent != 0 {
+					copyStocks[i].ChangePercent = newPickStock.ChangePercent
+				}
 			}
 
 		}
