@@ -5,6 +5,7 @@ import (
 	"context"
 	"errors"
 	"net/http"
+	"net/url"
 	"time"
 )
 
@@ -52,10 +53,31 @@ func (c *Client) SendRequestStream(req *http.Request) (*StreamReader, error) {
 	}, nil
 }
 
+func (c *Client) Do(request *http.Request) (*http.Response, error) {
+	return c.config.HTTPClient.Do(request)
+}
+
+func (c *Client) PostForm(request *http.Request, values url.Values) (*http.Response, error) {
+	return c.config.HTTPClient.PostForm(request.RequestURI, values)
+}
+
+func (c *Client) HttpClient() *http.Client {
+	return c.config.HTTPClient
+}
+
 func (c *Client) NewRequest(ctx context.Context, method, url string) (*http.Request, error) {
-	return http.NewRequestWithContext(ctx, method, url, nil)
+	request, err := http.NewRequestWithContext(ctx, method, url, nil)
+	if err != nil {
+		return request, err
+	}
+	c.request = request
+	return request, err
 }
 
 func isFailureStatusCode(resp *http.Response) bool {
 	return resp.StatusCode < http.StatusOK || resp.StatusCode >= http.StatusBadRequest
+}
+
+func (c *Client) SetHeader(key, value string) {
+	c.request.Header.Set(key, value)
 }

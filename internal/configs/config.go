@@ -5,6 +5,7 @@ import (
 	_ "embed"
 	"errors"
 	"github.com/duke-git/lancet/v2/slice"
+	"golang.org/x/exp/slices"
 	"gopkg.in/yaml.v3"
 	"os"
 )
@@ -15,6 +16,7 @@ type ApplicationConfig struct {
 
 type WatchList struct {
 	Stock []string `json:"stock" yaml:"stock"`
+	Fund  []string `json:"fund" yaml:"fund"`
 }
 
 //go:embed trading.yaml
@@ -48,6 +50,7 @@ func LoadConfig(configPath string) error {
 
 	cfg = &ac
 	cfg.UniqueWatchStock()
+	cfg.UniqueWatchFund()
 	configName = configPath
 	return nil
 }
@@ -84,20 +87,37 @@ func GetConfig() *ApplicationConfig {
 }
 
 func (config *ApplicationConfig) AddStockCode(code string) error {
-	if slice.Contain(config.WatchList.Stock, code) {
+	if slices.Contains(config.WatchList.Stock, code) {
 		return nil
 	}
 	config.WatchList.Stock = append(config.WatchList.Stock, code)
 	return config.refreshConfig()
 }
 
-func (config *ApplicationConfig) DeleteStockCode(code string) error {
-	if !slice.Contain(config.WatchList.Stock, code) {
+func (config *ApplicationConfig) AddFundCode(code string) error {
+	if slices.Contains(config.WatchList.Fund, code) {
 		return nil
 	}
-	index := slice.IndexOf(config.WatchList.Stock, code)
 
-	config.WatchList.Stock = slice.DeleteAt(config.WatchList.Stock, index)
+	config.WatchList.Fund = append(config.WatchList.Fund, code)
+	return config.refreshConfig()
+}
+
+func (config *ApplicationConfig) DeleteFundCode(code string) error {
+	if !slices.Contains(config.WatchList.Fund, code) {
+		return nil
+	}
+	index := slices.Index(config.WatchList.Fund, code)
+	config.WatchList.Fund = slices.Delete(config.WatchList.Fund, index, index+1)
+	return config.refreshConfig()
+}
+
+func (config *ApplicationConfig) DeleteStockCode(code string) error {
+	if !slices.Contains(config.WatchList.Stock, code) {
+		return nil
+	}
+	index := slices.Index(config.WatchList.Stock, code)
+	config.WatchList.Stock = slices.Delete(config.WatchList.Stock, index, index+1)
 	return config.refreshConfig()
 }
 
@@ -105,6 +125,9 @@ func (config *ApplicationConfig) UniqueWatchStock() {
 	config.WatchList.Stock = slice.Unique(config.WatchList.Stock)
 }
 
+func (config *ApplicationConfig) UniqueWatchFund() {
+	config.WatchList.Fund = slice.Unique(config.WatchList.Fund)
+}
 func (config *ApplicationConfig) refreshConfig() error {
 	file, err := os.OpenFile(configName, os.O_CREATE|os.O_RDWR|os.O_TRUNC, 0666)
 	defer file.Close()

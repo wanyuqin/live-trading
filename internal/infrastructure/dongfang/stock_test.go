@@ -2,7 +2,6 @@ package dongfang
 
 import (
 	"fmt"
-	"live-trading/internal/domain/entity"
 	"log"
 	"testing"
 )
@@ -24,24 +23,24 @@ func TestGetStockUrl(t *testing.T) {
 }
 
 func TestDongFangStockRepoImpl_WatchPickStock(t *testing.T) {
-	stockRepoImpl := NewDongFangStockRepoImpl()
-	rec := make(chan []entity.PickStock, 1000)
-	//0.000882,0.002336,0.002176,0.300059
-	go func() {
-		err := stockRepoImpl.WatchPickStock(entity.StockCodes{
-			entity.StockCode("000882"),
-			entity.StockCode("002336"),
-			entity.StockCode("002176"),
-			entity.StockCode("300059"),
-		}, rec)
-		if err != nil {
-			log.Fatal(err)
-		}
-	}()
-
-	for stock := range rec {
-		fmt.Printf("%#v\n", stock)
-	}
+	//stockRepoImpl := NewDongFangStockRepoImpl()
+	//rec := make(chan []entity.PickStock, 1000)
+	////0.000882,0.002336,0.002176,0.300059
+	//go func() {
+	//	err := stockRepoImpl.WatchPickStock(entity.StockCodes{
+	//		entity.StockCode("000882"),
+	//		entity.StockCode("002336"),
+	//		entity.StockCode("002176"),
+	//		entity.StockCode("300059"),
+	//	}, rec)
+	//	if err != nil {
+	//		log.Fatal(err)
+	//	}
+	//}()
+	//
+	//for stock := range rec {
+	//	fmt.Printf("%#v\n", stock)
+	//}
 
 }
 

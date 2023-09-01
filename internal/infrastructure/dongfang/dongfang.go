@@ -3,7 +3,9 @@ package dongfang
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/duke-git/lancet/v2/slice"
 	"github.com/duke-git/lancet/v2/strutil"
+	"live-trading/internal/configs"
 	"live-trading/internal/domain/entity"
 	"live-trading/tools/xmath"
 	"math/rand"
@@ -101,4 +103,83 @@ func ParseWatchPickStock(data []byte) ([]entity.PickStock, error) {
 	}
 
 	return pickStocks, err
+}
+
+func ParseFundList(src []byte) entity.FundList {
+	resp := struct {
+		Data struct {
+			KFS []struct {
+				FCODE        string      `json:"FCODE"`
+				SHORTNAME    string      `json:"SHORTNAME"`
+				ISHOT        string      `json:"ISHOT"`
+				ISBUY        bool        `json:"ISBUY"`
+				DTZT         string      `json:"DTZT"`
+				DWJZ         string      `json:"DWJZ"`
+				LJJZ         string      `json:"LJJZ"`
+				FUNDTYPE     string      `json:"FUNDTYPE"`
+				FTYPE        string      `json:"FTYPE"`
+				RZDE         string      `json:"RZDE"`
+				RZDF         string      `json:"RZDF"`
+				FSRQ         string      `json:"FSRQ"`
+				IPESTART1    string      `json:"IPESTART1"`
+				IPEEND1      string      `json:"IPEEND1"`
+				SHIPESTART1  string      `json:"SHIPESTART1"`
+				SHIPEEND1    string      `json:"SHIPEEND1"`
+				ISSALES      string      `json:"ISSALES"`
+				TradeBuyType int         `json:"TradeBuyType"`
+				Gsz          string      `json:"gsz"`
+				Gszzl        string      `json:"gszzl"`
+				Order        int         `json:"Order"`
+				SGZT         string      `json:"SGZT"`
+				ISSBDATE     interface{} `json:"ISSBDATE"`
+				ISSEDATE     interface{} `json:"ISSEDATE"`
+				ISNEW        interface{} `json:"ISNEW"`
+				KFR          interface{} `json:"KFR"`
+				SYLLN        string      `json:"SYL_LN"`
+			} `json:"KFS"`
+			HBX                []interface{} `json:"HBX"`
+			LCX                []interface{} `json:"LCX"`
+			CN                 []interface{} `json:"CN"`
+			HK                 interface{}   `json:"HK"`
+			GD                 interface{}   `json:"GD"`
+			Fcodes             []string      `json:"Fcodes"`
+			Orders             []string      `json:"Orders"`
+			IsShowSetRecommend int           `json:"IsShowSetRecommend"`
+		} `json:"Data"`
+		ErrCode    int         `json:"ErrCode"`
+		ErrMsg     interface{} `json:"ErrMsg"`
+		TotalCount int         `json:"TotalCount"`
+		Expansion  struct {
+			BjTime     string `json:"bjTime"`
+			UpdateTime string `json:"updateTime"`
+		} `json:"Expansion"`
+		PageSize  int `json:"PageSize"`
+		PageIndex int `json:"PageIndex"`
+	}{}
+
+	err := json.Unmarshal(src, &resp)
+	if err != nil {
+		fmt.Println(err)
+	}
+
+	funds := make([]entity.Fund, 0, len(resp.Data.KFS))
+	for i := range resp.Data.KFS {
+		kfs := resp.Data.KFS[i]
+		if slice.Contain(configs.GetConfig().WatchList.Fund, kfs.FCODE) {
+			Fund := entity.Fund{
+				Name:             kfs.SHORTNAME,
+				Code:             kfs.FCODE,
+				FNAV:             kfs.DWJZ,
+				TRF:              kfs.LJJZ,
+				DailyInc:         kfs.RZDE,
+				DailyIncRate:     kfs.RZDF,
+				InceptionIncRate: kfs.SYLLN,
+				Type:             kfs.FTYPE,
+				DataTime:         kfs.FSRQ,
+			}
+			funds = append(funds, Fund)
+		}
+
+	}
+	return funds
 }

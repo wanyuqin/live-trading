@@ -9,8 +9,6 @@ import (
 
 type DongFangStockRepoImpl struct {
 	repository.StockRepo
-
-	WatchState int
 }
 
 func NewDongFangStockRepoImpl() *DongFangStockRepoImpl {

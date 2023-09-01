@@ -1,29 +1,37 @@
-package fund
+package index
 
 import (
 	"context"
-	"github.com/charmbracelet/bubbles/textarea"
+	"github.com/charmbracelet/bubbles/viewport"
+	"github.com/charmbracelet/glamour"
 	"live-trading/internal/domain/service"
 )
 
 type FundDetailModel struct {
 	ctx         context.Context
 	fundService service.IFund
-	area        textarea.Model
+	area        viewport.Model
 }
 
 func NewFundDetailModel(ctx context.Context) *FundDetailModel {
-	return &FundDetailModel{
+	m := &FundDetailModel{
 		ctx:         ctx,
 		fundService: service.NewFund(),
+		area:        viewport.New(windowWidth, windowHeight),
 	}
+
+	return m
 }
 
 func (m *FundDetailModel) View() string {
+	renderer, err := glamour.NewTermRenderer(glamour.WithAutoStyle(), glamour.WithWordWrap(windowWidth))
+	if err != nil {
 
-	return ""
+	}
+	detail, err := renderer.Render(m.area.View())
+	return detail
 }
 
 func (m *FundDetailModel) InsertString(s string) {
-	m.area.InsertString(s)
+	m.area.SetContent(s)
 }

@@ -1,21 +1,58 @@
 package index
 
-import "fmt"
+import (
+	tea "github.com/charmbracelet/bubbletea"
+	"live-trading/internal/views/component/watchlist/stock"
+)
 
-func (m *Model) deleteStockCode() {
-	code := m.stock.GetRowCode(m.stock.Table.GetHighlightedRowIndex())
-	err := m.stockService.DeletePickStockCode(code)
-	if err != nil {
-		fmt.Println(err)
-	}
-	go m.stockService.RestartWatchPickStocks(m.ctx)
+func (m *Model) toggleInsertItem() tea.Cmd {
+	m.input.Placeholder = inputPlaceholder
+	m.input.Focus()
+	m.input.PromptStyle = focusedStyle
+	m.input.TextStyle = focusedStyle
+	m.openInput = true
+	inputModel, cmd := m.input.Update(nil)
+	m.input = inputModel
+	return cmd
 }
 
-func (m *Model) addStockCode(code string) {
-	err := m.stockService.AddPickStockCode(m.ctx, code)
+func (m *Model) deleteItem() {
+	component := m.components[m.selectedComponentIndex]
+	code := component.GetRowCode()
+	err := component.DeleteItem(m.ctx, code)
 	if err != nil {
-		fmt.Println(err)
+		m.errorModel.HandleError(err)
+		return
 	}
 
-	go m.stockService.RestartWatchPickStocks(m.ctx)
+	switch component.(type) {
+	case *stock.Model:
+		go func() {
+			err := m.stockService.RestartWatchPickStocks(m.ctx)
+			m.errorModel.HandleError(err)
+		}()
+	}
+}
+
+func (m *Model) changeSelectedView() {
+	maxSelected := len(m.components) - 1
+	if m.selectedComponentIndex >= maxSelected {
+		m.selectedComponentIndex = 0
+		return
+	}
+	m.selectedComponentIndex++
+}
+
+func (m *Model) selectedDetail() {
+	component := m.components[m.selectedComponentIndex]
+	code := component.GetRowCode()
+	detail, err := component.Detail(m.ctx, code)
+	if err != nil {
+		m.errorModel.HandleError(err)
+	}
+	if detail != "" {
+		m.detail.InsertString(detail)
+		m.detailShow = true
+	}
+
 }

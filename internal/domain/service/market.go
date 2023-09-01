@@ -40,7 +40,6 @@ func (m *Market) WatchMarket() error {
 		err := m.marketRepo.WatchMarket(m.ctx, entity.MarketCode, rec)
 		if err != nil {
 			fmt.Println(err)
-			return
 		}
 	}()
 

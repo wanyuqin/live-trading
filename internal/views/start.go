@@ -8,7 +8,10 @@ import (
 
 func Start() error {
 	ctx := context.Background()
-	p := tea.NewProgram(index.NewModel(), tea.WithAltScreen(), tea.WithContext(ctx))
+	p := tea.NewProgram(index.NewModel(),
+		tea.WithAltScreen(),
+		tea.WithContext(ctx),
+		tea.WithoutCatchPanics(), tea.WithMouseAllMotion())
 
 	_, err := p.Run()
 	if err != nil {

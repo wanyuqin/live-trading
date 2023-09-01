@@ -2,7 +2,6 @@ package service
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"live-trading/internal/configs"
 	"live-trading/internal/domain/entity"
@@ -16,7 +15,7 @@ type IStock interface {
 	GetPickStocks(ctx context.Context) entity.StockCodes
 	AddPickStockCode(ctx context.Context, code string) error
 	RestartWatchPickStocks(ctx context.Context) error
-	DeletePickStockCode(code string) error
+	DeletePickStockCode(ctx context.Context, code string) error
 }
 
 var stockCodeRegex = regexp.MustCompile("^[0-9a-zA-Z]{6}$")
@@ -78,7 +77,7 @@ func (s *Stock) GetPickStocks(ctx context.Context) entity.StockCodes {
 
 func (s *Stock) AddPickStockCode(ctx context.Context, code string) error {
 	if !stockCodeRegex.MatchString(code) {
-		return errors.New("stock code invalid")
+		return fmt.Errorf("%s stock code invalid", code)
 	}
 	err := configs.GetConfig().AddStockCode(code)
 	if err != nil {
@@ -96,7 +95,7 @@ func (s *Stock) RestartWatchPickStocks(ctx context.Context) error {
 	return nil
 }
 
-func (s *Stock) DeletePickStockCode(code string) error {
+func (s *Stock) DeletePickStockCode(ctx context.Context, code string) error {
 	return configs.GetConfig().DeleteStockCode(code)
 
 }

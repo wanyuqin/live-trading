@@ -3,12 +3,15 @@ package index
 import (
 	"context"
 	"fmt"
+	"github.com/charmbracelet/bubbles/help"
 	"github.com/charmbracelet/bubbles/key"
 	"github.com/charmbracelet/bubbles/textinput"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 	"live-trading/internal/domain/service"
+	"live-trading/internal/views/component"
 	"live-trading/internal/views/component/market"
+	"live-trading/internal/views/component/watchlist/fund"
 	"live-trading/internal/views/component/watchlist/stock"
 	"strings"
 	"time"
@@ -19,6 +22,8 @@ var (
 	focusedStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("205"))
 	windowWidth  int
 	windowHeight int
+
+	inputPlaceholder = "please input code"
 )
 
 type quoteMsg struct {
@@ -27,37 +32,65 @@ type quoteMsg struct {
 type Model struct {
 	ctx           context.Context
 	cancel        context.CancelCauseFunc
-	openInput     bool
-	stock         stock.Model
-	market        market.Model
+	stock         *stock.Model
+	market        *market.Model
+	fund          *fund.Model
+	errorModel    *ErrorModel
+	keys          *indexKeyMap
 	input         textinput.Model
+	help          help.Model
 	stockService  service.IStock
 	marketService service.IMarket
+	fundService   service.IFund
+	components    []component.Component
+	detail        *FundDetailModel
+
+	detailShow             bool
+	selectedComponentIndex int
+	openInput              bool
+	width                  int
+	height                 int
 }
 
 func NewModel() *Model {
-	//ctx, cancel := context.WithCancelCause(context.Background())
 	ctx := context.Background()
 	stockService := service.NewStockWithContext(ctx)
 	marketService := service.NewMarketWithContext(ctx)
 	input := textinput.New()
 	input.Cursor.Style = focusedStyle.Copy()
-	return &Model{
-		stock:         stock.NewStockModel(),
-		market:        market.NewModel(),
+	stockModel := stock.NewStockModel(ctx)
+	marketModel := market.NewModel(ctx)
+	fundModel := fund.NewFundModel(ctx)
+	errorModel := NewErrorModel()
+	detailModel := NewFundDetailModel(ctx)
+	model := Model{
 		input:         input,
 		stockService:  stockService,
 		marketService: marketService,
 		ctx:           ctx,
+		market:        marketModel,
+		fund:          fundModel,
+		stock:         stockModel,
+		errorModel:    errorModel,
+		detail:        detailModel,
+		keys:          newIndexKeyMap(),
 	}
+	model.addComponent(stockModel)
+	model.addComponent(fundModel)
+
+	return &model
+}
+
+func (m *Model) addComponent(c component.Component) {
+	m.components = append(m.components, c)
 }
 
 func (m *Model) Init() tea.Cmd {
+
 	m.startWatchPickStock()
 	m.startWatchMarketStock()
 	// 初始化一些IO
-	//return tea.Batch(tea.EnterAltScreen)
-	return tea.Batch(quoteTick(), tea.EnterAltScreen)
+	return tea.Batch(tea.EnterAltScreen)
 }
 
 func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
@@ -68,7 +101,8 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			switch msg.String() {
 			case "enter":
 				code := m.input.Value()
-				m.addStockCode(code)
+				err := m.components[m.selectedComponentIndex].AddItem(m.ctx, code)
+				m.errorModel.HandleError(err)
 				m.input = textinput.New()
 				m.openInput = false
 			case "esc":
@@ -76,64 +110,89 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				m.openInput = false
 			}
 		}
-
 		cmd := m.updateInput(msg)
 		cmds = append(cmds, cmd)
 		return m, tea.Batch(cmds...)
 	}
+
+	if m.detailShow {
+		switch msg := msg.(type) {
+		case tea.KeyMsg:
+			switch msg.String() {
+			case "esc":
+				m.detailShow = false
+				return m, tea.Batch(cmds...)
+			}
+		}
+
+	}
+
 	switch msg := msg.(type) {
 	case tea.WindowSizeMsg:
-		width, height := appStyle.GetFrameSize()
-		windowWidth = width
-		windowHeight = height
-		m.stock.Table.WithMaxTotalWidth(width)
+		m.width = msg.Width
+		m.height = msg.Height
+		m.stock.Table.WithMaxTotalWidth(m.width)
 	case tea.KeyMsg:
 		switch msg.String() {
 		case "x":
-			m.deleteStockCode()
+			m.deleteItem()
 		case "ctrl+c":
 			cmds = append(cmds, tea.Quit)
 		}
 		switch {
-		case key.Matches(msg, m.stock.Keys.InsertItem):
-			m.input.Placeholder = "please input stock code"
-			m.input.Focus()
-			m.input.PromptStyle = focusedStyle
-			m.input.TextStyle = focusedStyle
-			m.openInput = true
-			inputModel, cmd := m.input.Update(nil)
-			m.input = inputModel
-			cmds = append(cmds, cmd)
+		//case key.Matches(msg, m.stock.Keys.InsertItem):
+		case key.Matches(msg, m.keys.ToggleInsertItem):
+			if !m.detailShow {
+				cmd := m.toggleInsertItem()
+				cmds = append(cmds, cmd)
+			}
+		case key.Matches(msg, m.keys.ToggleChangeView):
+			m.changeSelectedView()
+		case key.Matches(msg, m.keys.ToggleDetail):
+			m.selectedDetail()
+
 		}
 	case quoteMsg:
 		// 定期获取
 		m.stock.RefreshTable()
 		m.market.RefreshTable()
+		m.fund.RefreshTable()
+		m.errorModel.Restore()
 
 	}
-	newTable, cmd := m.stock.Table.Update(msg)
-	m.stock.Table = newTable
-	cmds = append(cmds, cmd)
-	cmds = append(cmds, quoteTick())
 
+	newFundTable, cmd := m.fund.Table.Update(msg)
+	cmds = append(cmds, cmd)
+	m.fund.Table = newFundTable
+	newTable, cmd := m.stock.Table.Update(msg)
+	cmds = append(cmds, cmd)
+	m.stock.Table = newTable
+	m.detail.area, cmd = m.detail.area.Update(msg)
+	cmds = append(cmds, cmd)
+	//cmds = append(cmds, quoteTick())
+
+	m.resetSize()
 	return m, tea.Batch(cmds...)
 }
 
 func (m *Model) View() string {
 	doc := strings.Builder{}
-	now := getTime()
-	doc.WriteString(now + "\n\n")
 	doc.WriteString(m.market.View() + "\n\n")
-
 	if m.openInput {
 		doc.WriteString(appStyle.Render(m.input.View()))
 		return doc.String()
 	}
-
-	doc.WriteString(lipgloss.NewStyle().MarginLeft(1).Render(m.stock.Table.View()))
+	if m.detailShow {
+		doc.WriteString(m.detail.View())
+		return doc.String()
+	}
+	doc.WriteString(m.components[m.selectedComponentIndex].View())
 	doc.WriteString("\n\n\n\n")
-	doc.WriteString(m.stock.Keys.View())
-	return doc.String()
+	doc.WriteString(component.HelpStyle.Render(m.help.View(m.keys)))
+
+	doc.WriteString("\n\n")
+	doc.WriteString(m.errorModel.View())
+	return lipgloss.JoinHorizontal(lipgloss.Top, doc.String())
 }
 
 func (m *Model) updateInput(msg tea.Msg) tea.Cmd {
@@ -142,7 +201,6 @@ func (m *Model) updateInput(msg tea.Msg) tea.Cmd {
 		m.input = im
 		return cmd
 	}
-
 	return nil
 
 }
@@ -151,7 +209,7 @@ func (m *Model) startWatchPickStock() {
 	go func() {
 		err := m.stockService.WatchPickStocks()
 		if err != nil {
-			fmt.Println(err)
+			m.errorModel.HandleError(err)
 		}
 	}()
 }
@@ -160,9 +218,14 @@ func (m *Model) startWatchMarketStock() {
 	go func() {
 		err := m.marketService.WatchMarket()
 		if err != nil {
-			fmt.Println(err)
+			m.errorModel.HandleError(err)
 		}
 	}()
+}
+
+func (m *Model) resetSize() {
+	m.detail.area.Width = m.width
+	m.detail.area.Height = 20
 }
 
 func getTime() string {

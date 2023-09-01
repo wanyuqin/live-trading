@@ -5,6 +5,7 @@ import (
 	"github.com/charmbracelet/lipgloss"
 	"github.com/evertras/bubble-table/table"
 	"live-trading/internal/domain/entity"
+	"live-trading/internal/views/component"
 )
 
 const (
@@ -18,12 +19,6 @@ const (
 	columnKeyNow           = "trade"
 	columnKeyDiff          = "diff"
 	columnKeyChangePercent = "changePercent"
-
-	colorNormal   = "#fa0"
-	colorFire     = "#f64"
-	colorElectric = "#ff0"
-	colorWater    = "#44f"
-	colorPlant    = "#8b8"
 )
 
 func defaultPickStockTableColumn() []table.Column {
@@ -61,15 +56,15 @@ func makeRow(code string, name string, trade float64, diff float64, changePercen
 	)
 
 	if diff < 0 {
-		diffColumn = table.NewStyledCell(fmt.Sprintf("%.2f", diff), lipgloss.NewStyle().Foreground(lipgloss.Color(colorWater)))
-		tradeColumn = table.NewStyledCell(fmt.Sprintf("%.2f", trade), lipgloss.NewStyle().Foreground(lipgloss.Color(colorWater)))
-		changePercentColumn = table.NewStyledCell(fmt.Sprintf("%.2f%%", changePercent), lipgloss.NewStyle().Foreground(lipgloss.Color(colorWater)))
+		diffColumn = table.NewStyledCell(fmt.Sprintf("%.2f", diff), lipgloss.NewStyle().Foreground(lipgloss.Color(component.ColorGreen)))
+		tradeColumn = table.NewStyledCell(fmt.Sprintf("%.2f", trade), lipgloss.NewStyle().Foreground(lipgloss.Color(component.ColorGreen)))
+		changePercentColumn = table.NewStyledCell(fmt.Sprintf("%.2f%%", changePercent), lipgloss.NewStyle().Foreground(lipgloss.Color(component.ColorGreen)))
 	}
 
 	if diff > 0 {
-		diffColumn = table.NewStyledCell(fmt.Sprintf("%.2f", diff), lipgloss.NewStyle().Foreground(lipgloss.Color(colorFire)))
-		tradeColumn = table.NewStyledCell(fmt.Sprintf("%.2f", trade), lipgloss.NewStyle().Foreground(lipgloss.Color(colorFire)))
-		changePercentColumn = table.NewStyledCell(fmt.Sprintf("%.2f%s", changePercent, "%"), lipgloss.NewStyle().Foreground(lipgloss.Color(colorFire)))
+		diffColumn = table.NewStyledCell(fmt.Sprintf("%.2f", diff), lipgloss.NewStyle().Foreground(lipgloss.Color(component.ColorFire)))
+		tradeColumn = table.NewStyledCell(fmt.Sprintf("%.2f", trade), lipgloss.NewStyle().Foreground(lipgloss.Color(component.ColorFire)))
+		changePercentColumn = table.NewStyledCell(fmt.Sprintf("%.2f%s", changePercent, "%"), lipgloss.NewStyle().Foreground(lipgloss.Color(component.ColorFire)))
 
 	}
 
@@ -87,11 +82,10 @@ func initKeyMap() table.KeyMap {
 	return keys
 }
 
-func (m *Model) GetRowCode(index int) string {
+func (m *Model) GetRowCode() string {
 	rows := m.Table.GetVisibleRows()
-	if code, ok := rows[index].Data[columnKeyCode].(string); ok {
+	if code, ok := rows[m.Table.GetHighlightedRowIndex()].Data[columnKeyCode].(string); ok {
 		return code
 	}
-
 	return ""
 }

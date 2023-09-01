@@ -1,12 +1,16 @@
 package market
 
 import (
+	"context"
 	"fmt"
 	"github.com/charmbracelet/lipgloss"
 	"live-trading/internal/domain/entity"
+	"live-trading/internal/views/component"
 )
 
 type Model struct {
+	ctx context.Context
+
 	market string
 }
 
@@ -35,18 +39,18 @@ var (
 
 	listItem = lipgloss.NewStyle().Align(lipgloss.Center).Render
 
-	downStyle = lipgloss.NewStyle().Foreground(lipgloss.Color(colorGreen))
-	upStyle   = lipgloss.NewStyle().Foreground(lipgloss.Color(colorRed))
+	downStyle = lipgloss.NewStyle().Foreground(lipgloss.Color(component.ColorGreen))
+	upStyle   = lipgloss.NewStyle().Foreground(lipgloss.Color(component.ColorRed))
 )
 
 const (
 	columnWidth = 30
-	colorGreen  = "#5cb300"
-	colorRed    = "#f64"
 )
 
-func NewModel() Model {
-	return Model{}
+func NewModel(ctx context.Context) *Model {
+	return &Model{
+		ctx: ctx,
+	}
 }
 
 func GetMarket() string {
