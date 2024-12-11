@@ -2,8 +2,9 @@ package market
 
 import (
 	"fmt"
-	"github.com/charmbracelet/lipgloss"
 	"live-trading/internal/domain/entity"
+
+	"github.com/charmbracelet/lipgloss"
 )
 
 type Model struct {

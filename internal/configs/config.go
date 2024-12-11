@@ -4,9 +4,10 @@ import (
 	"embed"
 	_ "embed"
 	"errors"
+	"os"
+
 	"github.com/duke-git/lancet/v2/slice"
 	"gopkg.in/yaml.v3"
-	"os"
 )
 
 type ApplicationConfig struct {

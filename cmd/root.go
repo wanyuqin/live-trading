@@ -1,12 +1,13 @@
 package cmd
 
 import (
-	"github.com/spf13/cobra"
 	"live-trading/internal/configs"
 	"live-trading/internal/views"
 	"log"
 	"os"
 	"path/filepath"
+
+	"github.com/spf13/cobra"
 )
 
 var (

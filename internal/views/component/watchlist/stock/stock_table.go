@@ -2,9 +2,10 @@ package stock
 
 import (
 	"fmt"
+	"live-trading/internal/domain/entity"
+
 	"github.com/charmbracelet/lipgloss"
 	"github.com/evertras/bubble-table/table"
-	"live-trading/internal/domain/entity"
 )
 
 const (
@@ -28,11 +29,11 @@ const (
 
 func defaultPickStockTableColumn() []table.Column {
 	columns := []table.Column{
-		table.NewColumn(columnKeyCode, "代码", 10).WithFiltered(true),
-		table.NewColumn(columnKeyName, "名称", 10),
-		table.NewColumn(columnKeyNow, "最新价", 10),
-		table.NewColumn(columnKeyDiff, "涨跌额", 10),
-		table.NewColumn(columnKeyChangePercent, "涨跌幅", 10),
+		table.NewColumn(columnKeyCode, "代码", 15).WithFiltered(true),
+		table.NewColumn(columnKeyName, "名称", 20),
+		table.NewColumn(columnKeyNow, "最新价", 15),
+		table.NewColumn(columnKeyDiff, "涨跌额", 15),
+		table.NewColumn(columnKeyChangePercent, "涨跌幅", 15),
 	}
 	return columns
 }
