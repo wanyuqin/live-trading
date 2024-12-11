@@ -8,11 +8,12 @@ import (
 	"live-trading/internal/domain/entity"
 	"live-trading/internal/domain/repository"
 	"live-trading/internal/infrastructure/dongfang"
+	"live-trading/tools/gox"
 	"regexp"
 )
 
 type IStock interface {
-	WatchPickStocks() error
+	WatchPickStocks(ctx context.Context) error
 	GetPickStocks(ctx context.Context) entity.StockCodes
 	AddPickStockCode(ctx context.Context, code string) error
 	RestartWatchPickStocks(ctx context.Context) error
@@ -35,28 +36,27 @@ func NewStock() *Stock {
 }
 
 func NewStockWithContext(ctx context.Context) *Stock {
-	ctx, cancel := context.WithCancel(ctx)
+	cc, cancel := context.WithCancel(ctx)
 	return &Stock{
-		ctx:       ctx,
+		ctx:       cc,
 		cancel:    cancel,
 		stockRepo: dongfang.NewDongFangStockRepoImpl(),
 	}
 }
 
-func (s *Stock) WatchPickStocks() error {
-	pickStocks := s.GetPickStocks(s.ctx)
+func (s *Stock) WatchPickStocks(ctx context.Context) error {
+	pickStocks := s.GetPickStocks(ctx)
 	if len(pickStocks) == 0 {
 		return nil
 	}
 	rec := make(chan []entity.PickStock, 100)
-	go func() {
+	gox.RunSafe(ctx, func(ctx context.Context) {
 		err := s.stockRepo.WatchPickStock(s.ctx, pickStocks, rec)
 		if err != nil {
 			fmt.Println(err)
 			return
 		}
-	}()
-
+	})
 	for stocks := range rec {
 		copyStocks := stocks
 		entity.RefreshGlobalPickStock(copyStocks)
@@ -92,7 +92,7 @@ func (s *Stock) RestartWatchPickStocks(ctx context.Context) error {
 	s.cancel()
 	entity.ClearGlobalPickStock()
 	s.ctx, s.cancel = context.WithCancel(ctx)
-	s.WatchPickStocks()
+	s.WatchPickStocks(context.Background())
 	return nil
 }
 

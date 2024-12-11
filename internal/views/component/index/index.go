@@ -3,15 +3,16 @@ package index
 import (
 	"context"
 	"fmt"
-	"github.com/charmbracelet/bubbles/key"
-	"github.com/charmbracelet/bubbles/textinput"
-	tea "github.com/charmbracelet/bubbletea"
-	"github.com/charmbracelet/lipgloss"
 	"live-trading/internal/domain/service"
 	"live-trading/internal/views/component/market"
 	"live-trading/internal/views/component/watchlist/stock"
 	"strings"
 	"time"
+
+	"github.com/charmbracelet/bubbles/key"
+	"github.com/charmbracelet/bubbles/textinput"
+	tea "github.com/charmbracelet/bubbletea"
+	"github.com/charmbracelet/lipgloss"
 )
 
 var (
@@ -35,9 +36,8 @@ type Model struct {
 	marketService service.IMarket
 }
 
-func NewModel() *Model {
+func NewModel(ctx context.Context) *Model {
 	//ctx, cancel := context.WithCancelCause(context.Background())
-	ctx := context.Background()
 	stockService := service.NewStockWithContext(ctx)
 	marketService := service.NewMarketWithContext(ctx)
 	input := textinput.New()
@@ -149,7 +149,7 @@ func (m *Model) updateInput(msg tea.Msg) tea.Cmd {
 
 func (m *Model) startWatchPickStock() {
 	go func() {
-		err := m.stockService.WatchPickStocks()
+		err := m.stockService.WatchPickStocks(m.ctx)
 		if err != nil {
 			fmt.Println(err)
 		}

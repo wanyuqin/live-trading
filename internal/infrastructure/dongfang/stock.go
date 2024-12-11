@@ -24,7 +24,7 @@ func (d *DongFangStockRepoImpl) WatchPickStock(ctx context.Context, codes entity
 	if err != nil {
 		return err
 	}
-	request, err := c.NewRequest(context.Background(), "GET", u)
+	request, err := c.NewRequest(ctx, "GET", u)
 	if err != nil {
 		return err
 	}

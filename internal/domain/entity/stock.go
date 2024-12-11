@@ -41,7 +41,6 @@ func (s StockCodes) RequestCodes() []string {
 	codes := make([]string, 0, len(s))
 	for i := range s {
 		codes = append(codes, s[i].RequestCode())
-
 	}
 	return codes
 }

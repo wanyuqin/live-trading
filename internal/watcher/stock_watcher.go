@@ -21,7 +21,7 @@ func NewStockWatcher(ctx context.Context, codes []string) *StockWatcher {
 }
 
 func (watcher *StockWatcher) Start() error {
-	err := watcher.StockService.WatchPickStocks()
+	err := watcher.StockService.WatchPickStocks(nil)
 	return err
 }
 

@@ -3,12 +3,13 @@ package dongfang
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/duke-git/lancet/v2/strutil"
 	"live-trading/internal/domain/entity"
 	"live-trading/tools/xmath"
 	"math/rand"
 	"net/url"
 	"strings"
+
+	"github.com/duke-git/lancet/v2/strutil"
 )
 
 var (
