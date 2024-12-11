@@ -12,19 +12,19 @@ import (
 	"strings"
 )
 
-type DongFangFundRepoImpl struct {
+type FundRepoImpl struct {
 	repository.FundRepo
 }
 
-func NewDongFangFundRepoImpl() *DongFangFundRepoImpl {
-	return &DongFangFundRepoImpl{}
+func NewFundRepoImpl() *FundRepoImpl {
+	return &FundRepoImpl{}
 }
 
 func getFundListInfoUrl() {
 
 }
 
-func (d *DongFangFundRepoImpl) ListFundsInfo(ctx context.Context, fcodes []string) (entity.FundList, error) {
+func (d *FundRepoImpl) ListFundsInfo(ctx context.Context, fcodes []string) (entity.FundList, error) {
 	client := client.NewClient()
 	request, err := client.NewRequest(ctx, http.MethodPost, "https://api.fund.eastmoney.com/favor/GetFundsInfo")
 	if err != nil {

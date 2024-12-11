@@ -7,15 +7,15 @@ import (
 	"live-trading/internal/infrastructure/client"
 )
 
-type DongFangStockRepoImpl struct {
+type StockRepoImpl struct {
 	repository.StockRepo
 }
 
-func NewDongFangStockRepoImpl() *DongFangStockRepoImpl {
-	return &DongFangStockRepoImpl{}
+func NewStockRepoImpl() *StockRepoImpl {
+	return &StockRepoImpl{}
 }
 
-func (d *DongFangStockRepoImpl) WatchPickStock(ctx context.Context, codes entity.StockCodes, rec chan []entity.PickStock) error {
+func (d *StockRepoImpl) WatchPickStock(ctx context.Context, codes entity.StockCodes, rec chan []entity.PickStock) error {
 	c := client.NewClient()
 	u, err := GetStockUrl(codes.RequestCodes())
 	defer close(rec)

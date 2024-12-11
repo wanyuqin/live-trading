@@ -28,13 +28,12 @@ func (stream *StreamReader) ProcessLine() ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
-	buf := make([]byte, 10240)
-	n, err := response.Body.Read(buf)
+	body, err := io.ReadAll(response.Body)
 	if err != nil {
 		return nil, err
 	}
 
-	return buf[:n], nil
+	return body, nil
 }
 
 func (stream *StreamReader) processLines() {

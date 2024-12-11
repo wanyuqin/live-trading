@@ -5,13 +5,15 @@ import (
 	"fmt"
 	"github.com/charmbracelet/lipgloss"
 	"live-trading/internal/domain/entity"
+	"live-trading/internal/domain/service"
 	"live-trading/internal/views/component"
 )
 
 type Model struct {
 	ctx context.Context
 
-	market string
+	market        string
+	marketService service.IMarket
 }
 
 var (
@@ -49,7 +51,8 @@ const (
 
 func NewModel(ctx context.Context) *Model {
 	return &Model{
-		ctx: ctx,
+		ctx:           ctx,
+		marketService: service.NewMarket(),
 	}
 }
 
@@ -76,28 +79,34 @@ func GetMarket() string {
 	return lipgloss.JoinHorizontal(lipgloss.Top, lists)
 }
 
-func (m *Model) RefreshTable() {
-	marketStock := entity.GetGlobalMarketStock()
-	m.market = transformMarket(marketStock)
+func (m *Model) RefreshTable() error {
+	//marketStock := entity.GetGlobalMarketStock()
+	//m.market = transformMarket(marketStock)
+	markets, err := m.marketService.ListMarket()
+	if err != nil {
+		return err
+	}
+	m.market = transformMarket(markets)
+	return nil
 }
 
 func (m *Model) View() string {
 	return m.market
 }
 
-func transformMarket(markets []entity.PickStock) string {
+func transformMarket(markets entity.Markets) string {
 
 	marketRenders := make([]string, 0, len(markets))
 	for i := range markets {
 		market := markets[i]
-		changePercent := upStyle.Render(fmt.Sprintf("%.2f%%", market.ChangePercent))
-		trade := upStyle.Render(fmt.Sprintf("%.2f", market.Trade))
-		if market.ChangePercent < 0 {
-			changePercent = downStyle.Render(fmt.Sprintf("%.2f%%", market.ChangePercent))
+		changePercent := upStyle.Render(fmt.Sprintf("%.2f%%", market.FloatPercent))
+		trade := upStyle.Render(fmt.Sprintf("%.2f", market.Current))
+		if market.Float < 0 {
+			changePercent = downStyle.Render(fmt.Sprintf("%.2f%%", market.FloatPercent))
 		}
 
-		if market.Diff < 0 {
-			trade = downStyle.Render(fmt.Sprintf("%.2f", market.Trade))
+		if market.Float < 0 {
+			trade = downStyle.Render(fmt.Sprintf("%.2f", market.Current))
 		}
 		render := listStyle.Copy().Render(
 			lipgloss.JoinVertical(lipgloss.Left,

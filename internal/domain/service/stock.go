@@ -29,7 +29,7 @@ type Stock struct {
 func NewStock() *Stock {
 	return &Stock{
 		ctx:       context.Background(),
-		stockRepo: dongfang.NewDongFangStockRepoImpl(),
+		stockRepo: dongfang.NewStockRepoImpl(),
 	}
 }
 
@@ -38,7 +38,7 @@ func NewStockWithContext(ctx context.Context) *Stock {
 	return &Stock{
 		ctx:       ctx,
 		cancel:    cancel,
-		stockRepo: dongfang.NewDongFangStockRepoImpl(),
+		stockRepo: dongfang.NewStockRepoImpl(),
 	}
 }
 

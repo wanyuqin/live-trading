@@ -35,3 +35,9 @@ func (m *FundDetailModel) View() string {
 func (m *FundDetailModel) InsertString(s string) {
 	m.area.SetContent(s)
 }
+
+func (m *FundDetailModel) Clean() {
+	//m.area.Visibl
+	m.area = viewport.New(0, 0)
+
+}

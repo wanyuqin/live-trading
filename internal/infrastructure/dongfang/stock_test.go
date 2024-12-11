@@ -22,8 +22,8 @@ func TestGetStockUrl(t *testing.T) {
 	fmt.Println(url)
 }
 
-func TestDongFangStockRepoImpl_WatchPickStock(t *testing.T) {
-	//stockRepoImpl := NewDongFangStockRepoImpl()
+func TestStockRepoImpl_WatchPickStock(t *testing.T) {
+	//stockRepoImpl := NewStockRepoImpl()
 	//rec := make(chan []entity.PickStock, 1000)
 	////0.000882,0.002336,0.002176,0.300059
 	//go func() {

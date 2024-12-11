@@ -23,8 +23,8 @@ type FundService struct {
 
 func NewFund() *FundService {
 	return &FundService{
-		FundRepo:   dongfang.NewDongFangFundRepoImpl(),
-		XueQiuRepo: xueqiu.NewXueQiuFundRepoImpl(),
+		FundRepo:   dongfang.NewFundRepoImpl(),
+		XueQiuRepo: xueqiu.NewFundRepoImpl(),
 	}
 }
 

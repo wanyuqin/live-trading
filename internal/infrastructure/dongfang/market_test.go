@@ -4,6 +4,6 @@ import (
 	"testing"
 )
 
-func TestDongFangMarketRepoImpl_ListMarket(t *testing.T) {
+func TestMarketRepoImpl_ListMarket(t *testing.T) {
 
 }

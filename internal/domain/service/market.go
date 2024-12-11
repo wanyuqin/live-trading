@@ -6,29 +6,33 @@ import (
 	"live-trading/internal/domain/entity"
 	"live-trading/internal/domain/repository"
 	"live-trading/internal/infrastructure/dongfang"
+	"live-trading/internal/infrastructure/xueqiu"
 )
 
 type IMarket interface {
 	WatchMarket() error
+	ListMarket() (entity.Markets, error)
 }
 
 type Market struct {
-	ctx        context.Context
-	cancel     context.CancelFunc
-	marketRepo repository.MarketRepo
+	ctx                  context.Context
+	cancel               context.CancelFunc
+	marketRepo           repository.MarketRepo
+	xueqiuMarketRepoImpl repository.MarketRepo
 }
 
 func NewMarket() *Market {
 
 	return &Market{
-		ctx:        context.Background(),
-		marketRepo: dongfang.NewDongFangMarketRepoImpl(),
+		ctx:                  context.Background(),
+		marketRepo:           dongfang.NewMarketRepoImpl(),
+		xueqiuMarketRepoImpl: xueqiu.NewMarketRepoImpl(),
 	}
 }
 
 func NewMarketWithContext(ctx context.Context) *Market {
 	market := &Market{
-		marketRepo: dongfang.NewDongFangMarketRepoImpl(),
+		marketRepo: dongfang.NewMarketRepoImpl(),
 	}
 	market.ctx, market.cancel = context.WithCancel(ctx)
 	return market
@@ -49,4 +53,8 @@ func (m *Market) WatchMarket() error {
 	}
 
 	return nil
+}
+
+func (m *Market) ListMarket() (entity.Markets, error) {
+	return m.xueqiuMarketRepoImpl.ListMarket(m.ctx)
 }

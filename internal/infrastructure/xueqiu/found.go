@@ -11,15 +11,15 @@ import (
 	"net/url"
 )
 
-type XueQiuFundRepoImpl struct {
+type FundRepoImpl struct {
 	repository.FundRepo
 }
 
-func NewXueQiuFundRepoImpl() *XueQiuFundRepoImpl {
-	return &XueQiuFundRepoImpl{}
+func NewFundRepoImpl() *FundRepoImpl {
+	return &FundRepoImpl{}
 }
 
-func (repo *XueQiuFundRepoImpl) GetFundPosition(ctx context.Context, code string) (entity.FundPosition, error) {
+func (repo *FundRepoImpl) GetFundPosition(ctx context.Context, code string) (entity.FundPosition, error) {
 	client := client.NewClient()
 	values := url.Values{}
 	values.Set("fund_code", code)
@@ -28,8 +28,8 @@ func (repo *XueQiuFundRepoImpl) GetFundPosition(ctx context.Context, code string
 		return entity.FundPosition{}, err
 	}
 	request.URL.RawQuery = values.Encode()
-
 	response, err := client.Do(request)
+	defer response.Body.Close()
 	if err != nil {
 		return entity.FundPosition{}, err
 	}
@@ -42,7 +42,7 @@ func (repo *XueQiuFundRepoImpl) GetFundPosition(ctx context.Context, code string
 
 }
 
-func (repo *XueQiuFundRepoImpl) GetFundManager(ctx context.Context, code string) (entity.FundManagerList, error) {
+func (repo *FundRepoImpl) GetFundManager(ctx context.Context, code string) (entity.FundManagerList, error) {
 	values := url.Values{}
 	values.Set("post_status", "1")
 	values.Set("fund_code", code)
@@ -52,10 +52,9 @@ func (repo *XueQiuFundRepoImpl) GetFundManager(ctx context.Context, code string)
 	if err != nil {
 		return nil, err
 	}
-
 	request.URL.RawQuery = values.Encode()
-
 	response, err := client.Do(request)
+	defer response.Body.Close()
 	if err != nil {
 		return nil, err
 	}
@@ -66,27 +65,27 @@ func (repo *XueQiuFundRepoImpl) GetFundManager(ctx context.Context, code string)
 	return parseFundManager(body)
 }
 
-func (repo *XueQiuFundRepoImpl) GetFundDetail(ctx context.Context, code string) (entity.FoundDetail, error) {
-
+func (repo *FundRepoImpl) GetFundDetail(ctx context.Context, code string) (entity.FoundDetail, error) {
 	u := fmt.Sprintf("%s/%s", fundDetailUrl, code)
-
 	client := client.NewClient()
 	request, err := client.NewRequest(ctx, http.MethodGet, u)
 	if err != nil {
 		return entity.FoundDetail{}, err
 	}
 	response, err := client.Do(request)
+	defer response.Body.Close()
 	if err != nil {
 		return entity.FoundDetail{}, err
 	}
 	data, err := io.ReadAll(response.Body)
+
 	if err != nil {
 		return entity.FoundDetail{}, err
 	}
 	return parseFundDetail(data)
 }
 
-func (repo *XueQiuFundRepoImpl) GetFundSummary(ctx context.Context, code string) (entity.FundSummary, error) {
+func (repo *FundRepoImpl) GetFundSummary(ctx context.Context, code string) (entity.FundSummary, error) {
 	u := fmt.Sprintf("%s/%s", fundSummaryUrl, code)
 	client := client.NewClient()
 	request, err := client.NewRequest(ctx, http.MethodGet, u)
@@ -94,6 +93,7 @@ func (repo *XueQiuFundRepoImpl) GetFundSummary(ctx context.Context, code string)
 		return entity.FundSummary{}, err
 	}
 	response, err := client.Do(request)
+	defer response.Body.Close()
 	if err != nil {
 		return entity.FundSummary{}, err
 	}

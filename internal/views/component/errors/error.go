@@ -1,4 +1,4 @@
-package index
+package errors
 
 import (
 	"fmt"
@@ -10,7 +10,7 @@ const (
 	maxErrorShowTimes  int = 3
 )
 
-type ErrorModel struct {
+type Model struct {
 	message   string
 	showTimes int
 }
@@ -23,11 +23,11 @@ var (
 		MarginRight(1)
 )
 
-func NewErrorModel() *ErrorModel {
-	return &ErrorModel{}
+func NewModel() *Model {
+	return &Model{}
 }
 
-func (m *ErrorModel) HandleError(err error) {
+func (m *Model) HandleError(err error) {
 	if err != nil {
 		if m.showTimes < maxErrorShowTimes {
 			mes := fmt.Sprintf(":( ️Error Message: %s", err.Error())
@@ -42,14 +42,14 @@ func (m *ErrorModel) HandleError(err error) {
 
 }
 
-func (m *ErrorModel) View() string {
+func (m *Model) View() string {
 	if m.message == "" {
 		return ""
 	}
 	return errorMessageStyle.Render(m.message)
 }
 
-func (m *ErrorModel) Restore() {
+func (m *Model) Restore() {
 	if m.message != "" {
 		if m.showTimes > maxErrorShowTimes {
 			m.showTimes = initErrorShowTimes

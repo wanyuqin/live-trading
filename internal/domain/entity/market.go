@@ -3,10 +3,10 @@ package entity
 import "encoding/json"
 
 type Market struct {
-	Name         string `json:"name"`          // 名称
-	Current      string `json:"current"`       //当前值
-	Float        string `json:"float"`         // 浮动
-	FloatPercent string `json:"float_percent"` // 浮动百分
+	Name         string  `json:"name"`          // 名称
+	Current      float64 `json:"current"`       //当前值
+	Float        float64 `json:"float"`         // 浮动
+	FloatPercent float64 `json:"float_percent"` // 浮动百分
 }
 
 type MarketRaw struct {

@@ -7,8 +7,8 @@ import (
 	"testing"
 )
 
-func TestXueQiuFundRepoImpl_GetPositionStocks(t *testing.T) {
-	repoImpl := NewXueQiuFundRepoImpl()
+func TestFundRepoImpl_GetPositionStocks(t *testing.T) {
+	repoImpl := NewFundRepoImpl()
 	fundPosition, err := repoImpl.GetFundPosition(context.Background(), "003095")
 	if err != nil {
 		log.Fatal(err)
@@ -16,8 +16,8 @@ func TestXueQiuFundRepoImpl_GetPositionStocks(t *testing.T) {
 	fmt.Printf("%#v", fundPosition)
 }
 
-func TestXueQiuFundRepoImpl_GetFundManager(t *testing.T) {
-	repoImpl := NewXueQiuFundRepoImpl()
+func TestFundRepoImpl_GetFundManager(t *testing.T) {
+	repoImpl := NewFundRepoImpl()
 	fundManagers, err := repoImpl.GetFundManager(context.Background(), "003095")
 	if err != nil {
 		log.Fatal(err)
@@ -25,8 +25,8 @@ func TestXueQiuFundRepoImpl_GetFundManager(t *testing.T) {
 	fmt.Printf("%#v", fundManagers)
 }
 
-func TestXueQiuFundRepoImpl_GetFundDetail(t *testing.T) {
-	repoImpl := NewXueQiuFundRepoImpl()
+func TestFundRepoImpl_GetFundDetail(t *testing.T) {
+	repoImpl := NewFundRepoImpl()
 	fundDetail, err := repoImpl.GetFundDetail(context.Background(), "003095")
 	if err != nil {
 		log.Fatal(err)
@@ -35,8 +35,8 @@ func TestXueQiuFundRepoImpl_GetFundDetail(t *testing.T) {
 	fmt.Printf("%#v", fundDetail)
 }
 
-func TestXueQiuFundRepoImpl_GetFundSummary(t *testing.T) {
-	repoImpl := NewXueQiuFundRepoImpl()
+func TestFundRepoImpl_GetFundSummary(t *testing.T) {
+	repoImpl := NewFundRepoImpl()
 	summary, err := repoImpl.GetFundSummary(context.Background(), "003095")
 	if err != nil {
 		return

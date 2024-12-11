@@ -10,6 +10,7 @@ import (
 	"github.com/charmbracelet/lipgloss"
 	"live-trading/internal/domain/service"
 	"live-trading/internal/views/component"
+	"live-trading/internal/views/component/errors"
 	"live-trading/internal/views/component/market"
 	"live-trading/internal/views/component/watchlist/fund"
 	"live-trading/internal/views/component/watchlist/stock"
@@ -31,11 +32,10 @@ type quoteMsg struct {
 
 type Model struct {
 	ctx           context.Context
-	cancel        context.CancelCauseFunc
 	stock         *stock.Model
 	market        *market.Model
 	fund          *fund.Model
-	errorModel    *ErrorModel
+	errorModel    *errors.Model
 	keys          *indexKeyMap
 	input         textinput.Model
 	help          help.Model
@@ -61,7 +61,7 @@ func NewModel() *Model {
 	stockModel := stock.NewStockModel(ctx)
 	marketModel := market.NewModel(ctx)
 	fundModel := fund.NewFundModel(ctx)
-	errorModel := NewErrorModel()
+	errorModel := errors.NewModel()
 	detailModel := NewFundDetailModel(ctx)
 	model := Model{
 		input:         input,
@@ -78,6 +78,9 @@ func NewModel() *Model {
 	model.addComponent(stockModel)
 	model.addComponent(fundModel)
 
+	model.errorModel.HandleError(model.market.RefreshTable())
+	model.fund.RefreshTable()
+	model.stock.RefreshTable()
 	return &model
 }
 
@@ -88,8 +91,9 @@ func (m *Model) addComponent(c component.Component) {
 func (m *Model) Init() tea.Cmd {
 
 	m.startWatchPickStock()
-	m.startWatchMarketStock()
+	//m.startWatchMarketStock()
 	// 初始化一些IO
+	//return tea.Batch(quoteTick(), tea.EnterAltScreen)
 	return tea.Batch(tea.EnterAltScreen)
 }
 
@@ -121,6 +125,7 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			switch msg.String() {
 			case "esc":
 				m.detailShow = false
+				m.detail.Clean()
 				return m, tea.Batch(cmds...)
 			}
 		}
@@ -128,6 +133,12 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	}
 
 	switch msg := msg.(type) {
+	case quoteMsg:
+		// 定期获取
+		m.stock.RefreshTable()
+		m.errorModel.HandleError(m.market.RefreshTable())
+		m.fund.RefreshTable()
+		m.errorModel.Restore()
 	case tea.WindowSizeMsg:
 		m.width = msg.Width
 		m.height = msg.Height
@@ -152,12 +163,6 @@ func (m *Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.selectedDetail()
 
 		}
-	case quoteMsg:
-		// 定期获取
-		m.stock.RefreshTable()
-		m.market.RefreshTable()
-		m.fund.RefreshTable()
-		m.errorModel.Restore()
 
 	}
 
@@ -234,7 +239,13 @@ func getTime() string {
 }
 
 func quoteTick() tea.Cmd {
-	return tea.Tick(1*time.Second, func(t time.Time) tea.Msg {
-		return quoteMsg{}
-	})
+	return func() tea.Msg {
+		tick := time.NewTicker(10 * time.Second)
+		for {
+			select {
+			case <-tick.C:
+				return quoteMsg{}
+			}
+		}
+	}
 }

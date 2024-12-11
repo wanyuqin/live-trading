@@ -11,6 +11,7 @@ var (
 	fundManagerUrl   = "https://danjuanfunds.com/djapi/fundx/base/fund/record/manager/list"
 	fundDetailUrl    = "https://danjuanfunds.com/djapi/fund/detail"
 	fundSummaryUrl   = "https://danjuanfunds.com/djapi/fund"
+	listMarketUrl    = "https://stock.xueqiu.com/v5/stock/batch/quote.json?symbol=SH000001,SZ399001,SZ399006,SH000688"
 )
 
 type PositionStockResponse struct {
@@ -365,4 +366,83 @@ func parseFundSummary(body []byte) (entity.FundSummary, error) {
 
 	err = copier.Copy(&fundSummary, response.Data)
 	return fundSummary, err
+}
+
+type ListMarketResponse struct {
+	Data struct {
+		Items []struct {
+			Market struct {
+				StatusId     int         `json:"status_id"`
+				Region       string      `json:"region"`
+				Status       string      `json:"status"`
+				TimeZone     string      `json:"time_zone"`
+				TimeZoneDesc interface{} `json:"time_zone_desc"`
+				DelayTag     int         `json:"delay_tag"`
+			} `json:"market"`
+			Quote struct {
+				Symbol             string   `json:"symbol"`
+				Code               string   `json:"code"`
+				Exchange           string   `json:"exchange"`
+				Name               string   `json:"name"`
+				Type               int      `json:"type"`
+				SubType            *string  `json:"sub_type"`
+				Status             int      `json:"status"`
+				Current            float64  `json:"current"`
+				Currency           string   `json:"currency"`
+				Percent            float64  `json:"percent"`
+				Chg                float64  `json:"chg"`
+				Timestamp          int64    `json:"timestamp"`
+				Time               int64    `json:"time"`
+				LotSize            int      `json:"lot_size"`
+				TickSize           float64  `json:"tick_size"`
+				Open               float64  `json:"open"`
+				LastClose          float64  `json:"last_close"`
+				High               float64  `json:"high"`
+				Low                float64  `json:"low"`
+				AvgPrice           float64  `json:"avg_price"`
+				Volume             int64    `json:"volume"`
+				Amount             float64  `json:"amount"`
+				TurnoverRate       float64  `json:"turnover_rate"`
+				Amplitude          float64  `json:"amplitude"`
+				MarketCapital      float64  `json:"market_capital"`
+				FloatMarketCapital *float64 `json:"float_market_capital"`
+				TotalShares        int64    `json:"total_shares"`
+				FloatShares        int64    `json:"float_shares"`
+				IssueDate          int64    `json:"issue_date"`
+				LockSet            *int     `json:"lock_set"`
+				CurrentYearPercent float64  `json:"current_year_percent"`
+			} `json:"quote"`
+			Others struct {
+				CybSwitch bool `json:"cyb_switch"`
+			} `json:"others"`
+			Tags []interface{} `json:"tags"`
+		} `json:"items"`
+		ItemsSize int `json:"items_size"`
+	} `json:"data"`
+	ErrorCode        int    `json:"error_code"`
+	ErrorDescription string `json:"error_description"`
+}
+
+func parseListMarket(body []byte) (entity.Markets, error) {
+	response := ListMarketResponse{}
+	err := json.Unmarshal(body, &response)
+	if err != nil {
+		return nil, err
+	}
+
+	markets := make(entity.Markets, 0, len(response.Data.Items))
+
+	for i := range response.Data.Items {
+		item := response.Data.Items[i]
+		market := entity.Market{
+			Name:         item.Quote.Name,
+			Current:      item.Quote.Current,
+			Float:        item.Quote.Chg,
+			FloatPercent: item.Quote.Percent,
+		}
+
+		markets = append(markets, market)
+	}
+
+	return markets, nil
 }

@@ -16,18 +16,18 @@ var (
 	cybz = "http://99.push2.eastmoney.com/api/qt/stock/sse?secid=0.399006&fields=f58,f43,f169,f170"
 )
 
-type DongFangMarketRepoImpl struct {
+type MarketRepoImpl struct {
 	repository.MarketRepo
 }
 
-func NewDongFangMarketRepoImpl() *DongFangMarketRepoImpl {
-	return &DongFangMarketRepoImpl{}
+func NewMarketRepoImpl() *MarketRepoImpl {
+	return &MarketRepoImpl{}
 }
 
 type MarketResponse struct {
 }
 
-func (d *DongFangMarketRepoImpl) WatchMarket(ctx context.Context, codes entity.StockCodes, rec chan<- []entity.PickStock) error {
+func (d *MarketRepoImpl) WatchMarket(ctx context.Context, codes entity.StockCodes, rec chan<- []entity.PickStock) error {
 	c := client.NewClient()
 	u, err := GetStockUrl(codes.RequestCodes())
 	defer close(rec)
