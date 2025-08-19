@@ -53,7 +53,7 @@ go build -o live-trading main.go
 
 ### Basic Operations
 
-- **Add Stock**: Press `i` key, input 6-digit stock code (e.g., 000001)
+- **Add Stock**: Press `a` key, input 6-digit stock code (e.g., 000001)
 - **Delete Stock**: Press `x` key to delete the currently selected stock
 - **Exit Program**: Press `Ctrl+C`
 
